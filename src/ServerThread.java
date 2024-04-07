@@ -12,7 +12,8 @@ public class ServerThread implements Runnable {
     private Scanner reader;
     private PrintStream writer;
 
-    private Connection connection;
+
+    private Connection connection; //Conection pool?
 
     public ServerThread(Socket socket,Connection connection) {
         this.socket = socket;
@@ -57,7 +58,7 @@ public class ServerThread implements Runnable {
         String message=getMessage();
         String[] parts=message.split(":");
         String username=parts[0];
-        String password=parts[1];
+        String password=parts[1]; //hash?
         String role;
         int id;
         //Statement statement = connection.createStatement();
@@ -79,7 +80,7 @@ public class ServerThread implements Runnable {
     public void customerMenu(Customer customer){
 
     }
-    public void adminMenu(Admin admin){
+    public void adminMenu(Admin admin) throws SQLException {
         int choice= Integer.parseInt(getMessage());
         /*
         1-справка за оборота на магазина за определен период от време
@@ -90,13 +91,113 @@ public class ServerThread implements Runnable {
 
         switch (choice){
             case 1:
-                //spravka();
+                spravka();
+                break;
             case 2:
-                //redactMenu();
+                redactMenu();
+                break;
             case 3:
                 //saleMenu();
+                break;
             case 4:
-                //quantityCheck();
+                quantityCheck();
+                break;
+            case 5:
+                break;
+        }
+    }
+
+    public void spravka() throws SQLException {
+        //first=ot koga, last=do koga sig trq ima nqkva proverka tuka
+        String first=getMessage();
+        String second=getMessage();
+        String sql="SELECT SUM(p.price * pur.quantity) AS total_sales FROM purchases pur JOIN products p ON pur.product_id = p.product_id WHERE pur.purchaseDate >= ? AND pur.purchaseDate < ?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1,first);
+        statement.setString(2,second);
+        ResultSet resultSet = statement.executeQuery();
+        if (resultSet.next()){
+            System.out.println(resultSet.getInt("total_sales"));
+        }else {
+            System.out.println("no sales");
+        }
+    }
+
+    public void redactMenu() throws SQLException {
+        int choice= Integer.parseInt(getMessage());
+        switch (choice){
+            case 1:
+                addProduct();
+                break;
+            case 2:
+                redactProduct();
+                break;
+            case 3:
+                removeProduct();
+                break;
+            case 4:
+                break;
+        }
+    }
+    public void addProduct() throws SQLException {
+        System.out.println(/*"product_id_,*/"name,price,quantity,minPrice");
+        String sql="insert into products values(?,?,?,?,?)";
+        String name=getMessage();
+        double price= Double.parseDouble(getMessage());
+        int quantity= Integer.parseInt(getMessage());
+        double minPrice= Double.parseDouble(getMessage());
+
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1,name);
+        statement.setDouble(2,price);
+        statement.setInt(3,quantity);
+        statement.setDouble(4,minPrice);
+        statement.setInt(5,1);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Product added successfully.");
+        } else {
+            System.out.println("Failed to add product.");
+        }
+    }
+
+    public void redactProduct() throws SQLException {
+        System.out.println("enter product id");
+        int id= Integer.parseInt(getMessage());
+        String sql="update products set name=?,price=?,quantity=?,minPrice=? where product_id=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1,getMessage());
+        statement.setDouble(2,Double.parseDouble(getMessage()));
+        statement.setInt(3,Integer.parseInt(getMessage()));
+        statement.setDouble(4,Double.parseDouble(getMessage()));
+        statement.setInt(5,id);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Product updated successfully.");
+        } else {
+            System.out.println("Failed to update product.");
+        }
+    }
+    public void removeProduct() throws SQLException {
+        System.out.println("enter product id");
+        int id= Integer.parseInt(getMessage());
+        String sql="delete from products where product_id=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setInt(1,id);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Product removed successfully.");
+        } else {
+            System.out.println("Failed to remove product.");
+        }
+    }
+
+    public void quantityCheck() throws SQLException {
+        String sql="select id,quantity from products where quantity < 10";
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(sql);
+        while (resultSet.next()){
+            System.out.println(resultSet.getString("id")+" "+resultSet.getInt("quantity"));
         }
     }
 }

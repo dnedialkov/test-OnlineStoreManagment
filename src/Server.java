@@ -1,3 +1,5 @@
+import org.apache.commons.dbcp2.BasicDataSource;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,17 +17,23 @@ public class Server {
         String username = "root";
         String password = "root";
 
+        BasicDataSource dataSource = new BasicDataSource();//i tiq 4te sushto
+        dataSource.setUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection connection = DriverManager.getConnection(url, username, password);
+//            Class.forName("com.mysql.cj.jdbc.Driver");
+//            Connection connection = DriverManager.getConnection(url, username, password);
 
             ServerSocket serverSocket = new ServerSocket(1312);
 
             while (true){
                 Socket socket=serverSocket.accept();
+                Connection connection = dataSource.getConnection();//ako nesh stane stva trq mahna ot tuka
                 new Thread(new ServerThread(socket,connection)).start();
             }
-        }catch (ClassNotFoundException | SQLException e) {
+        }catch (/*ClassNotFoundException |*/ SQLException e) {
             e.printStackTrace();
         }
     }
