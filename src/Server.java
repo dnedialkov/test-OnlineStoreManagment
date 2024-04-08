@@ -31,7 +31,7 @@ public class Server {
             while (true){
                 Socket socket=serverSocket.accept();
                 Connection connection = dataSource.getConnection();//ako nesh stane stva trq mahna ot tuka
-                new Thread(new ServerThread(socket,connection)).start();
+                new Thread(new ServerThread(socket,connection,dataSource)).start();
             }
         }catch (/*ClassNotFoundException |*/ SQLException e) {
             e.printStackTrace();

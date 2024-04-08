@@ -1,3 +1,5 @@
+import org.apache.commons.dbcp2.BasicDataSource;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
@@ -14,10 +16,12 @@ public class ServerThread implements Runnable {
 
 
     private Connection connection; //Conection pool?
+    private BasicDataSource dataSource;
 
-    public ServerThread(Socket socket,Connection connection) {
+    public ServerThread(Socket socket,Connection connection,BasicDataSource dataSource) {
         this.socket = socket;
         this.connection = connection;
+        this.dataSource=dataSource;
     }
 
     public void run() {
@@ -73,6 +77,7 @@ public class ServerThread implements Runnable {
             System.out.println("wrong username or password");
             return;
         }
+        connection.close();
         if (role.equals("user"))
             customerMenu(new Customer(id,username));
         else adminMenu(new Admin(id,username));
@@ -97,7 +102,7 @@ public class ServerThread implements Runnable {
                 redactMenu();
                 break;
             case 3:
-                //saleMenu();
+                salesMenu();
                 break;
             case 4:
                 quantityCheck();
@@ -111,8 +116,9 @@ public class ServerThread implements Runnable {
         //first=ot koga, last=do koga sig trq ima nqkva proverka tuka
         String first=getMessage();
         String second=getMessage();
+        Connection newconnection = dataSource.getConnection();
         String sql="SELECT SUM(p.price * pur.quantity) AS total_sales FROM purchases pur JOIN products p ON pur.product_id = p.product_id WHERE pur.purchaseDate >= ? AND pur.purchaseDate < ?";
-        PreparedStatement statement = connection.prepareStatement(sql);
+        PreparedStatement statement = newconnection.prepareStatement(sql);
         statement.setString(1,first);
         statement.setString(2,second);
         ResultSet resultSet = statement.executeQuery();
@@ -121,10 +127,12 @@ public class ServerThread implements Runnable {
         }else {
             System.out.println("no sales");
         }
+        newconnection.close();
     }
 
     public void redactMenu() throws SQLException {
         int choice= Integer.parseInt(getMessage());
+        connection=dataSource.getConnection();
         switch (choice){
             case 1:
                 addProduct();
@@ -138,6 +146,7 @@ public class ServerThread implements Runnable {
             case 4:
                 break;
         }
+        connection.close();
     }
     public void addProduct() throws SQLException {
         System.out.println(/*"product_id_,*/"name,price,quantity,minPrice");
@@ -191,13 +200,195 @@ public class ServerThread implements Runnable {
             System.out.println("Failed to remove product.");
         }
     }
-
     public void quantityCheck() throws SQLException {
+        connection=dataSource.getConnection();
         String sql="select id,quantity from products where quantity < 10";
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(sql);
         while (resultSet.next()){
             System.out.println(resultSet.getString("id")+" "+resultSet.getInt("quantity"));
         }
+        connection.close();
     }
+
+    public void salesMenu() throws SQLException {
+        int choice = Integer.parseInt(getMessage());
+        switch (choice) {
+            case 1:
+                startSale();
+                break;
+            case 2:
+                stopSale();
+                break;
+            case 3:
+                manageSale();
+                break;
+            case 4:
+                break;
+        }
+    }
+
+    public void startSale() throws SQLException {
+        // Implement logic to start a sales campaign
+        // Prompt user for campaign details: name, products included, discount percentage, start date, end date
+        // Perform necessary database operations to store campaign details
+    }
+
+    public void stopSale() throws SQLException {
+        // Implement logic to stop a sales campaign
+        // Prompt user to select the campaign to stop
+        // Update database to mark the campaign as stopped
+    }
+
+    public void manageSale() throws SQLException {
+        sendMessage("Select an option:");
+        sendMessage("1. Add product to campaign");
+        sendMessage("2. Remove product from campaign");
+        sendMessage("3. Change discount percentage");
+        sendMessage("4. Adjust start date");
+        sendMessage("5. Adjust end date");
+        sendMessage("6. Exit");
+
+        int choice = Integer.parseInt(getMessage());
+
+        switch (choice) {
+            case 1:
+                addProductToCampaign();
+                break;
+            case 2:
+                removeProductFromCampaign();
+                break;
+            case 3:
+                changeDiscountPercentage();
+                break;
+            case 4:
+                adjustStartDate();
+                break;
+            case 5:
+                adjustEndDate();
+                break;
+            case 6:
+                // Exit manageSale() method
+                break;
+            default:
+                sendMessage("Invalid choice");
+                break;
+        }
+    }
+    public boolean checkDiscount(int product_id,int discount,Connection connection1) throws SQLException {
+        String sql="select price,minimalPrice from products where product_id=?";
+        PreparedStatement statement = connection1.prepareStatement(sql);
+        statement.setInt(1,product_id);
+        double price;
+        double minimalPrice;
+        ResultSet resultSet = statement.executeQuery();
+        if (resultSet.next()){
+            price=resultSet.getDouble("price");
+            minimalPrice=resultSet.getDouble("minimalPrice");
+        }else {
+            System.out.println("wrong product id");
+            return false;
+        }
+        double discount_price=price*(1- (double) discount /100);
+        return !(discount_price < minimalPrice);
+    }
+    public void addProductToCampaign() throws SQLException {
+        int campaign_id= Integer.parseInt(getMessage());
+        int product_id= Integer.parseInt(getMessage());
+        int discount_percentage= Integer.parseInt(getMessage());
+        connection=dataSource.getConnection();
+
+        if (!checkDiscount(product_id,discount_percentage,connection)) {
+            System.out.println("discount too high");
+            connection.close();
+            return;
+        }
+        String sql="insert into sales (campain_id,product_id,discount_percentage) values (?,?,?)";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setInt(1,campaign_id);
+        statement.setInt(2,product_id);
+        statement.setInt(3,discount_percentage);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Product added to campaign successfully.");
+        } else {
+            System.out.println("Failed to add product to campaign.");
+        }
+
+        connection.close();
+    }
+
+    public void removeProductFromCampaign() throws SQLException {
+        connection=dataSource.getConnection();
+        int campaign_id= Integer.parseInt(getMessage());
+        int product_id= Integer.parseInt(getMessage());
+        String sql="delete from sales where campain_id=? and product_id=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setInt(1,campaign_id);
+        statement.setInt(2,product_id);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Product removed successfully.");
+        } else {
+            System.out.println("Failed to remove product.");
+        }
+        connection.close();
+    }
+    public void changeDiscountPercentage() throws SQLException {
+        connection=dataSource.getConnection();
+        int campaign_id= Integer.parseInt(getMessage());
+        int product_id= Integer.parseInt(getMessage());
+        int discount_percentage= Integer.parseInt(getMessage());
+        if (!checkDiscount(product_id,discount_percentage,connection)) {
+            System.out.println("discount too high");
+            connection.close();
+            return;
+        }
+        String sql="update sales set discount_percentage=? where campain_id=? and product_id=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setInt(1,discount_percentage);
+        statement.setInt(2,campaign_id);
+        statement.setInt(3,product_id);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Discount percentage updated successfully.");
+        } else {
+            System.out.println("Failed to update discount percentage.");
+        }
+        connection.close();
+    }
+    public void adjustStartDate() throws SQLException {
+        connection=dataSource.getConnection();
+        int campaign_id= Integer.parseInt(getMessage());
+        String start_date= getMessage();
+        String sql="update salesCampain set start_date=? where campain_id=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1,start_date);
+        statement.setInt(2,campaign_id);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Start date updated successfully.");
+        } else {
+            System.out.println("Failed to update start date.");
+        }
+        connection.close();
+    }
+    public void adjustEndDate() throws SQLException {
+        connection=dataSource.getConnection();
+        int campaign_id= Integer.parseInt(getMessage());
+        String end_date= getMessage();
+        String sql="update salesCampain set end_date=? where campain_id=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1,end_date);
+        statement.setInt(2,campaign_id);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("End date updated successfully.");
+        } else {
+            System.out.println("Failed to update end date.");
+        }
+        connection.close();
+    }
+
+
 }
