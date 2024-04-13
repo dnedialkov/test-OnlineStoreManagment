@@ -13,14 +13,14 @@ import java.util.concurrent.Executors;
 public class Server {
 
     public static void main(String[] args) throws IOException {
-        String url = "jdbc:mysql://localhost:3306/storedb";
-        String username = "root";
-        String password = "root";
-
-        BasicDataSource dataSource = new BasicDataSource();//i tiq 4te sushto
-        dataSource.setUrl(url);
-        dataSource.setUsername(username);
-        dataSource.setPassword(password);
+//        String url = "jdbc:mysql://localhost:3306/storedb";
+//        String username = "root";
+//        String password = "root";
+//
+//        BasicDataSource dataSource = new BasicDataSource();//i tiq 4te sushto
+//        dataSource.setUrl(url);
+//        dataSource.setUsername(username);
+//        dataSource.setPassword(password);
 
         try {
 //            Class.forName("com.mysql.cj.jdbc.Driver");
@@ -30,8 +30,8 @@ public class Server {
 
             while (true){
                 Socket socket=serverSocket.accept();
-                Connection connection = dataSource.getConnection();//ako nesh stane stva trq mahna ot tuka
-                new Thread(new ServerThread(socket,connection,dataSource)).start();
+                Connection connection = DatabaseManager.getConnection();//ako nesh stane stva trq mahna ot tuka
+                new Thread(new ServerThread(socket,connection/*,dataSource*/)).start();
             }
         }catch (/*ClassNotFoundException |*/ SQLException e) {
             e.printStackTrace();
