@@ -114,8 +114,105 @@ public class ServerThread implements Runnable {
         loginL();
     }
 
-    public void customerMenu(Customer customer){
+    public void customerMenu(Customer customer) throws SQLException {
+        int choice;
 
+        do {
+            System.out.println("Меню за клиенти:");
+            System.out.println("1. Разгледай всички налични продукти");
+            System.out.println("2. Разгледай продукти от кампании с промоции и разпродажби");
+            System.out.println("3. Поръчай продукт");
+            System.out.println("0. Изход");
+            System.out.print("Изберете опция: ");
+
+            choice = Integer.parseInt(getMessage());
+
+            switch (choice) {
+                case 1:
+                    browseAllProducts();
+                    break;
+                case 2:
+                    browsePromotionalProducts();
+                    break;
+                case 3:
+                    orderProduct(customer);
+                    break;
+                case 0:
+                    System.out.println("Изход от менюто за клиенти.");
+                    break;
+                default:
+                    System.out.println("Невалиден избор. Моля, опитайте отново.");
+            }
+        } while (choice != 0);
+    }
+
+    public void browseAllProducts() throws SQLException {
+        connection=DatabaseManager.getConnection();
+        String sql="select products.name,products.price,products.quantity from products";
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(sql);
+        while (resultSet.next()){
+            System.out.println(resultSet.getString("product_name"));
+            System.out.println(resultSet.getDouble("price"));
+            System.out.println(resultSet.getInt("quantity"));
+        }//sig trq da e do while ili nesh podobno kato quantityCheck
+        connection.close();
+    }
+
+    public void browsePromotionalProducts() throws SQLException {
+        connection=DatabaseManager.getConnection();
+        String sql="SELECT p.name AS product_name, s.new_price AS sale_price, p.quantity\n" +
+                "FROM products p\n" +
+                "JOIN sales s ON p.product_id = s.product_id\n" +
+                "JOIN salesCampain sc ON s.campain_id = sc.campain_id\n" +
+                "WHERE sc.isActive = 1\n";
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(sql);
+        while (resultSet.next()){
+            System.out.println(resultSet.getString("product_name"));
+            System.out.println(resultSet.getDouble("sale_price"));
+            System.out.println(resultSet.getInt("quantity"));
+        }//sig trq da e do while ili nesh podobno kato quantityCheck
+        connection.close();
+    }
+
+    public void orderProduct(Customer customer) throws SQLException {
+        connection=DatabaseManager.getConnection();
+        int product_id= Integer.parseInt(getMessage());
+        int quantity= Integer.parseInt(getMessage());
+        String cardNumber=getMessage();
+        if (!CardValidator.validateCardNumber(cardNumber)){
+            System.out.println("invalid card number");
+            connection.close();
+            return;
+        }
+
+        String sql2="select quantity from products where product_id=?";
+        PreparedStatement statement2 = connection.prepareStatement(sql2);
+        statement2.setInt(1,product_id);
+        ResultSet resultSet = statement2.executeQuery();
+        if (resultSet.next()){
+            if (resultSet.getInt("quantity")<quantity){
+                System.out.println("not enough quantity");
+                connection.close();
+                return;
+            }
+        }
+
+        String sql="insert into purchases(product_id,quantity,user_id,purchaseDate) values(?,?,?,now())";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setInt(1,product_id);
+        statement.setInt(2,quantity);
+        statement.setInt(3,customer.getId());
+        statement.executeUpdate();
+
+        String sql3="update products set quantity=quantity-? where product_id=?";
+        PreparedStatement statement3 = connection.prepareStatement(sql3);
+        statement3.setInt(1,quantity);
+        statement3.setInt(2,product_id);
+        statement3.executeUpdate();
+
+        connection.close();
     }
     public void adminMenu(Admin admin) throws SQLException {
         int choice= Integer.parseInt(getMessage());
@@ -140,8 +237,22 @@ public class ServerThread implements Runnable {
                 quantityCheck();
                 break;
             case 5:
+                makeAdmin();
                 break;
         }
+    }
+    public void makeAdmin() throws SQLException {
+        String sql="update user set role='admin' where id=?";
+        int id= Integer.parseInt(getMessage());
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setInt(1,id);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Admin created successfully.");
+        } else {
+            System.out.println("Failed to create admin.");
+        }
+        connection.close();
     }
 
     public void spravka() throws SQLException {
@@ -241,6 +352,19 @@ public class ServerThread implements Runnable {
             System.out.println(resultSet.getString("id")+" "+resultSet.getInt("quantity"));
         }
         connection.close();
+        /*
+         public void receiveMessages() {
+        try {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println("Message from server: " + line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        }
+        nesh takova trq da e v clienta
+         */
     }
 
     public void salesMenu() throws SQLException {
@@ -264,12 +388,40 @@ public class ServerThread implements Runnable {
         // Implement logic to start a sales campaign
         // Prompt user for campaign details: name, products included, discount percentage, start date, end date
         // Perform necessary database operations to store campaign details
+
+        Connection con = DatabaseManager.getConnection();
+        int campaign_id = Integer.parseInt(getMessage());
+        String sql = "update salesCampain set isActive=1 where campain_id=?";
+        PreparedStatement statement = con.prepareStatement(sql);
+        statement.setInt(1, campaign_id);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Campaign started successfully.");
+        } else {
+            System.out.println("Failed to start campaign.");
+        }
+        con.close();
+        //? nz dali da e taka
     }
 
     public void stopSale() throws SQLException {
         // Implement logic to stop a sales campaign
         // Prompt user to select the campaign to stop
         // Update database to mark the campaign as stopped
+        sendMessage("Select campaign to stop:");
+        int campaign_id = Integer.parseInt(getMessage());
+        Connection con = DatabaseManager.getConnection();
+        String sql = "update salesCampain set isActive=0 where campain_id=?";
+        PreparedStatement statement = con.prepareStatement(sql);
+        statement.setInt(1, campaign_id);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            System.out.println("Campaign stopped successfully.");
+        } else {
+            System.out.println("Failed to stop campaign.");
+        }
+        con.close();
+        //? nz dali da e taka pak
     }
 
     public void manageSale() throws SQLException {
