@@ -20,10 +20,11 @@ minimalPrice decimal(10,2)
 );
 
 create table purchases(
-purchase_id int primary key,
+purchase_id int primary key auto_increment,
 product_id int,
-user_id int,
 quantity int,
+purchase_price double,
+user_id int,
 purchaseDate date,
 constraint foreign key (product_id) references products(product_id),
 constraint foreign key (user_id) references user(user_id)
@@ -32,17 +33,21 @@ constraint foreign key (user_id) references user(user_id)
 create table salesCampain(
 campain_id int primary key,
 campainStart date,
-campainEnd date);
+campainEnd date,
+isActive int
+);
 
 create table sales(
 -- sale_id int primary key,
 campain_id int,
 product_id int,
 discount int,
+new_price double,
 primary key(campain_id,product_id),
 constraint foreign key(campain_id) references salesCampain(campain_id),
 constraint foreign key(product_id) references products(product_id)
 );
+
 
 insert into user
 values
@@ -73,8 +78,19 @@ INSERT INTO products (product_id, name, price, quantity, minimalPrice)
 VALUES
 (5, 'Laptop', 1200.00, 10, 1000.00);
 
-update users
+update user
 set username='as', passwordH='123', role='admin'
 where id=1;
 
 select products.id,products.quantity from products where quantity<10;
+
+select price,minimalPrice from products where product_id=10;
+
+select * from user;
+
+update user 
+set passwordH='04f8996da763b7a969b1028ee3007569eaf3a635486ddab211d512c85b9df8fb'
+where user_id=2;
+
+select sum(p.price*pur.quantity) as total_sales from purchases pur join products p on pur.product_id=p.product_id;
+select sum(pur.purchase_price*pur.quantity) as total_sales from purchases pur;
