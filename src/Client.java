@@ -1,9 +1,7 @@
-import javax.sound.midi.Soundbank;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
-import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 import static java.lang.System.exit;
@@ -45,17 +43,40 @@ public class Client {
         System.out.println("Enter your choice");
         String message = scanner.nextLine();
         sendMessage(message);
-        if(message.equals("1")){
+        if (message.equals("1")) {
             login();
-        }
-        else if(message.equals("2")){
+        } else if (message.equals("2")) {
             register();
-        }
-        else if(message.equals("3")){
+        } else if (message.equals("3")) {
             exit(0);
         }
     }
+
     public static void login() throws NoSuchAlgorithmException {
+        System.out.println("Enter username");
+        String username = scanner.nextLine();
+        if (username.isEmpty()) exit(1);
+        System.out.println("Enter password");
+        String password = scanner.nextLine();
+        password = PasswordHasher.hashPassword(password);
+        //String message = username + ":" + password;
+        sendMessage(username);
+        sendMessage(password);
+        //getMessage();
+        if (reader.nextLine().equals("wrong username or password")) {
+            System.out.println("Wrong username or password");
+            login();
+            exit(1);
+        }
+        int choice = Integer.parseInt(reader.nextLine());
+        if (choice == 1) {
+            usermenu();
+        } else {
+            adminmenu();
+        }
+    }
+
+    public static void register() throws NoSuchAlgorithmException {
         System.out.println("Enter username");
         String username = scanner.nextLine();
         System.out.println("Enter password");
@@ -63,29 +84,10 @@ public class Client {
         password = PasswordHasher.hashPassword(password);
         String message = username + ":" + password;
         sendMessage(message);
-        //getMessage();
-        if (reader.nextLine().equals("wrong username or password")) {
-            System.out.println("Wrong username or password");
-            exit(1);
-        }
-        int choice = Integer.parseInt(reader.nextLine());
-        if(choice==1){
-            usermenu();
-        }
-        else{
-            adminmenu();
-        }
-    }
-    public static void register() throws NoSuchAlgorithmException {
-        System.out.println("Enter username");
-        String username = scanner.nextLine();
-        System.out.println("Enter password");
-        String password = scanner.nextLine();
-        String message = username + ":" + password;
-        sendMessage(message);
         getMessage();
         login();
     }
+
     public static void usermenu() {
         System.out.println("Меню за клиенти:");
         System.out.println("1. Разгледай всички налични продукти");
@@ -96,19 +98,17 @@ public class Client {
         int choice = Integer.parseInt(scanner.nextLine());
         sendMessage(String.valueOf(choice));
         //scanner.nextLine();
-        if(choice==1){
+        if (choice == 1) {
             browseAllProducts();
-        }
-        else if(choice==2){
+        } else if (choice == 2) {
             browsePromotionalProducts();
-        }
-        else if(choice==3){
+        } else if (choice == 3) {
             orderProduct();
-        }
-        else if(choice==0){
+        } else if (choice == 0) {
             exit(0);
         }
     }
+
     public static void browseAllProducts() {
         String line;
         while ((line = reader.nextLine()) != null) {
@@ -137,7 +137,8 @@ public class Client {
         }
         usermenu();
     }
-    public static void orderProduct(){
+
+    public static void orderProduct() {
         System.out.println("Enter product id");
         int id = Integer.parseInt(scanner.nextLine());
         String message = String.valueOf(id);
@@ -168,14 +169,16 @@ public class Client {
         }
         usermenu();
     }
-    public static void adminmenu() {
+
+    public static void adminmenu() throws NoSuchAlgorithmException {
         System.out.println("Admin menu");
         System.out.println("1. Spravka");
         System.out.println("2. Redact menu");
         System.out.println("3. Sales Menu");
         System.out.println("4. quantityCheck");
         System.out.println("5. Make admin");
-        System.out.println("6. Exit");
+        System.out.println("6. Remove admin");
+        System.out.println("7. Exit");
         System.out.println("Enter your choice");
         int choice = Integer.parseInt(scanner.nextLine());
         sendMessage(String.valueOf(choice));
@@ -193,36 +196,40 @@ public class Client {
                 quantityCheck();
                 break;
             case 5:
-                makeAdmin();
+                addAdmin();
                 break;
             case 6:
+                removeAdmin();
+                break;
+            case 7:
                 exit(0);
                 break;
             default:
                 System.out.println("Невалиден избор. Моля, опитайте отново.");
-                break;}
+                break;
+        }
     }
+
     public static void spravka() {
         System.out.println("Enter startDate and endDate in format: YYYY-MM-DD");
         String startDate = scanner.nextLine();
         String endDate = scanner.nextLine();
-       // String message = startDate + ":" + endDate;
+        // String message = startDate + ":" + endDate;
         sendMessage(startDate);
         sendMessage(endDate);
-        int line= Integer.parseInt(reader.nextLine());
-        if (line==0) {
+        int line = Integer.parseInt(reader.nextLine());
+        if (line == 0) {
             System.out.println("No sales between these dates");
-        }
-        else {
+        } else {
             System.out.println("Total sales: " + line);
         }
     }
 
-    public static void redactMenu(){
+    public static void redactMenu() {
         System.out.println("1. Add product");
         System.out.println("2. Redact product");
         System.out.println("3. Remove product");
-        int choice= scanner.nextInt();
+        int choice = scanner.nextInt();
         sendMessage(String.valueOf(choice));
         switch (choice) {
             case 1:
@@ -240,11 +247,11 @@ public class Client {
         }
     }
 
-    public static void salesMenu(){
+    public static void salesMenu() {
         System.out.println("1. Start sale");
         System.out.println("2. Stop sale");
         System.out.println("3. Manage sale");
-        int choice= scanner.nextInt();
+        int choice = scanner.nextInt();
         sendMessage(String.valueOf(choice));
         switch (choice) {
             case 1:
@@ -261,20 +268,23 @@ public class Client {
                 break;
         }
     }
-    public static void startSale(){
+
+    public static void startSale() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
         String line = reader.nextLine();
         System.out.println(line);
     }
-    public static void stopSale(){
+
+    public static void stopSale() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
         String line = reader.nextLine();
         System.out.println(line);
     }
+
     public static void manageSale() {
         System.out.println("Select an option:");
         System.out.println("1. Add product to campaign");
@@ -306,7 +316,8 @@ public class Client {
                 break;
         }
     }
-    public static void addProductToCampaign(){
+
+    public static void addProductToCampaign() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
@@ -319,17 +330,15 @@ public class Client {
         while (true) {
             String response = reader.nextLine();
             if (response.equals("success")) break;
-            else if(response.equals("Wrong product ID. Please enter a valid product ID.")){
+            else if (response.equals("Wrong product ID. Please enter a valid product ID.")) {
                 System.out.println("Wrong product ID. Please enter a valid product ID.");
                 productId = scanner.nextInt();
                 sendMessage(String.valueOf(productId));
-            }
-            else if(response.equals("Wrong campaign ID. Please enter a valid campaign ID.")){
+            } else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID.")) {
                 System.out.println("Wrong campaign ID. Please enter a valid campaign ID.");
                 id = scanner.nextInt();
                 sendMessage(String.valueOf(id));
-            }
-            else if(response.equals("Wrong discount percentage. Please enter a valid discount percentage.")){
+            } else if (response.equals("Wrong discount percentage. Please enter a valid discount percentage.")) {
                 System.out.println("Wrong discount percentage. Please enter a valid discount percentage.");
                 discountPercentage = scanner.nextInt();
                 sendMessage(String.valueOf(discountPercentage));
@@ -339,7 +348,7 @@ public class Client {
         System.out.println(line);
     }
 
-    public static void removeProductFromCampaign(){
+    public static void removeProductFromCampaign() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
@@ -349,12 +358,11 @@ public class Client {
         while (true) {
             String response = reader.nextLine();
             if (response.equals("success")) break;
-            else if(response.equals("Wrong product ID. Please enter a valid product ID.")){
+            else if (response.equals("Wrong product ID. Please enter a valid product ID.")) {
                 System.out.println(response);
                 productId = scanner.nextInt();
                 sendMessage(String.valueOf(productId));
-            }
-            else if(response.equals("Wrong campaign ID. Please enter a valid campaign ID.")){
+            } else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID.")) {
                 System.out.println(response);
                 id = scanner.nextInt();
                 sendMessage(String.valueOf(id));
@@ -364,7 +372,7 @@ public class Client {
         System.out.println(line);
     }
 
-    public static void changeDiscountPercentage(){
+    public static void changeDiscountPercentage() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
@@ -377,17 +385,15 @@ public class Client {
         while (true) {
             String response = reader.nextLine();
             if (response.equals("success")) break;
-            else if(response.equals("Wrong product ID. Please enter a valid product ID.")){
+            else if (response.equals("Wrong product ID. Please enter a valid product ID.")) {
                 System.out.println(response);
                 productId = scanner.nextInt();
                 sendMessage(String.valueOf(productId));
-            }
-            else if(response.equals("Wrong campaign ID. Please enter a valid campaign ID.")){
+            } else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID.")) {
                 System.out.println(response);
                 id = scanner.nextInt();
                 sendMessage(String.valueOf(id));
-            }
-            else if(response.equals("Wrong discount percentage. Please enter a valid discount percentage.")){
+            } else if (response.equals("Wrong discount percentage. Please enter a valid discount percentage.")) {
                 System.out.println(response);
                 discountPercentage = scanner.nextInt();
                 sendMessage(String.valueOf(discountPercentage));
@@ -397,7 +403,7 @@ public class Client {
         System.out.println(line);
     }
 
-    public static void adjustStartDate(){
+    public static void adjustStartDate() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
@@ -407,7 +413,7 @@ public class Client {
         while (true) {
             String response = reader.nextLine();
             if (response.equals("success")) break;
-            else if(response.equals("Wrong campaign ID. Please enter a valid campaign ID.")){
+            else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID.")) {
                 System.out.println(response);
                 id = scanner.nextInt();
                 sendMessage(String.valueOf(id));
@@ -416,7 +422,8 @@ public class Client {
         String line = reader.nextLine();
         System.out.println(line);
     }
-    public static void adjustEndDate(){
+
+    public static void adjustEndDate() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
@@ -426,7 +433,7 @@ public class Client {
         while (true) {
             String response = reader.nextLine();
             if (response.equals("success")) break;
-            else if(response.equals("Wrong campaign ID. Please enter a valid campaign ID.")){
+            else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID.")) {
                 System.out.println(response);
                 id = scanner.nextInt();
                 sendMessage(String.valueOf(id));
@@ -437,7 +444,7 @@ public class Client {
     }
 
 
-    public static void addProduct(){
+    public static void addProduct() {
         System.out.println("Enter product name");
         String name = scanner.nextLine();
         sendMessage(name);
@@ -453,7 +460,8 @@ public class Client {
         String line = reader.nextLine();
         System.out.println(line);
     }
-    public static void redactProduct(){
+
+    public static void redactProduct() {
         System.out.println("Enter product id");
         int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
@@ -472,7 +480,8 @@ public class Client {
         String line = reader.nextLine();
         System.out.println(line);
     }
-    public static void removeProduct(){
+
+    public static void removeProduct() {
         System.out.println("Enter product id");
         int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
@@ -480,7 +489,7 @@ public class Client {
         System.out.println(line);
     }
 
-    public static void quantityCheck(){
+    public static void quantityCheck() {
         System.out.println("Enter minimum number of products");
         int min = Integer.parseInt(scanner.nextLine());
         sendMessage(String.valueOf(min));
@@ -489,11 +498,37 @@ public class Client {
             System.out.println(line);
         }
     }
-    public static void makeAdmin(){
-        System.out.println("Enter id");
-        int id=scanner.nextInt();
+
+    public static void addAdmin() throws NoSuchAlgorithmException {
+
+        System.out.println("Enter id of the user you want to make admin");
+        int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
-        String response=reader.nextLine();
+        System.out.println("Enter your username");
+        String username = scanner.nextLine();
+        sendMessage(username);
+        System.out.println("Enter your password");
+        String password = scanner.nextLine();
+        password = PasswordHasher.hashPassword(password);
+        sendMessage(password);
+
+        String response = reader.nextLine();
+        System.out.println(response);
+    }
+
+    public static void removeAdmin() throws NoSuchAlgorithmException {
+        System.out.println("Enter id of the user you want to remove from admin");
+        int id = scanner.nextInt();
+        sendMessage(String.valueOf(id));
+        System.out.println("Enter your username");
+        String username = scanner.nextLine();
+        sendMessage(username);
+        System.out.println("Enter your password");
+        String password = scanner.nextLine();
+        password = PasswordHasher.hashPassword(password);
+        sendMessage(password);
+
+        String response = reader.nextLine();
         System.out.println(response);
     }
 
