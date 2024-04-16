@@ -3,7 +3,7 @@ use storedb;
 
 
 create table user(
-user_id int primary key,
+user_id int primary key auto_increment,
 username varchar(60),
 passwordH varchar(100),
 role enum("admin","user"),
@@ -11,7 +11,7 @@ UNIQUE(username)
 );
 
 create table products(
-product_id int primary key,
+product_id int primary key auto_increment,
 name varchar(100),
 price decimal(10,2),
 quantity int,
@@ -31,7 +31,7 @@ constraint foreign key (user_id) references user(user_id)
 );
 
 create table salesCampain(
-campain_id int primary key,
+campain_id int primary key auto_increment,
 campainStart date,
 campainEnd date,
 isActive int
@@ -48,11 +48,20 @@ constraint foreign key(campain_id) references salesCampain(campain_id),
 constraint foreign key(product_id) references products(product_id)
 );
 
+create table adminLog(
+admin_id int,
+user_id int,
+action varchar(20),
+date date,
+constraint foreign key(admin_id) references user(user_id),
+constraint foreign key(user_id) references user(user_id)
+);
+
 
 insert into user
 values
-(1,"admin","admin","admin"),
-(2,"user","user","user"),
+(1,"admin","8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918","admin"),
+(2,"user","04f8996da763b7a969b1028ee3007569eaf3a635486ddab211d512c85b9df8fb","user"),
 (3,"ivan","ivan","admin");
 
 select username,passwordH,role from user where username="ivan" and passwordH="ivan";
@@ -72,25 +81,10 @@ VALUES
 (4, 1, 3, 2, '2024-04-04'),
 (5, 4, 2, 1, '2024-04-05');
 
-SELECT SUM(p.price * pur.quantity) AS total_sales FROM purchases pur JOIN products p ON pur.product_id = p.product_id WHERE pur.purchaseDate >= '2024-04-01' AND pur.purchaseDate < '2024-05-01';
-
 INSERT INTO products (product_id, name, price, quantity, minimalPrice)
 VALUES
 (5, 'Laptop', 1200.00, 10, 1000.00);
 
-update user
-set username='as', passwordH='123', role='admin'
-where id=1;
+INSERT INTO salesCampain (campainStart, campainEnd, isActive) VALUES ('2024-04-16', '2024-04-30', 1);
 
-select products.id,products.quantity from products where quantity<10;
-
-select price,minimalPrice from products where product_id=10;
-
-select * from user;
-
-update user 
-set passwordH='04f8996da763b7a969b1028ee3007569eaf3a635486ddab211d512c85b9df8fb'
-where user_id=2;
-
-select sum(p.price*pur.quantity) as total_sales from purchases pur join products p on pur.product_id=p.product_id;
-select sum(pur.purchase_price*pur.quantity) as total_sales from purchases pur;
+INSERT INTO sales (campain_id, product_id, discount, new_price) VALUES (1, 1, 10, (SELECT price FROM products WHERE product_id = 1) * 0.9);
