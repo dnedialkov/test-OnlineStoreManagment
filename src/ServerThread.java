@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Scanner;
@@ -26,7 +27,34 @@ public class ServerThread implements Runnable {
         //this.dataSource=dataSource;
     }
 
+    public static void logAdm(int adminId, int userId, String action, Connection connection) {
+        String sql = "insert into adminLog(admin_id,user_id,action,date) values(?,?,?,now())";
+        try {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setInt(1, userId);
+            statement.setInt(2, adminId);
+            statement.setString(3, action);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
+    public static boolean checkCampain(int id, Connection connection) throws SQLException {
+        String sql = "select campain_id from salesCampain where campain_id=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setInt(1, id);
+        ResultSet resultSet = statement.executeQuery();
+        return resultSet.next();
+    }
+
+    public static boolean checkProduct(int id, Connection connection) throws SQLException {
+        String sql = "select product_id from products where product_id=?";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setInt(1, id);
+        ResultSet resultSet = statement.executeQuery();
+        return resultSet.next();
+    }
 
     public void run() {
         try {
@@ -49,19 +77,26 @@ public class ServerThread implements Runnable {
                     break;
                 case 3:
                     break;
+                case 4://remove later
+                    adminMenu();
+                    break;
+                case 5://remove later
+                    customerMenu(new Customer(2, "user"));
             }
             //loginL();
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } finally {
+            try {
+                reader.close();
+                writer.close();
+                socket.close();
+                connection.close();
+            } catch (IOException | SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
-        try {
-            reader.close();
-            writer.close();
-            socket.close();
-            connection.close();
-        } catch (IOException | SQLException e) {
-            throw new RuntimeException(e);
-        }
+
     }
 
     public void sendMessage(String message) {
@@ -115,17 +150,44 @@ public class ServerThread implements Runnable {
         String password = parts[1]; //should be hashed client side and we receive the hash only
         String role = "user";
 
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setString(1, username);
-        statement.setString(2, password);
-        statement.setString(3, role);
-        int rowsAffected = statement.executeUpdate();
-        if (rowsAffected > 0) {
-            System.out.println("User registered successfully.");
-        } else {
-            System.out.println("Failed to register user.");
-
+//        PreparedStatement statement = connection.prepareStatement(sql);
+//        statement.setString(1, username);
+//        statement.setString(2, password);
+//        statement.setString(3, role);
+//        int rowsAffected = statement.executeUpdate();
+//        if (rowsAffected > 0) {
+//            System.out.println("User registered successfully.");
+//        } else {
+//            System.out.println("Failed to register user.");
+//        }
+        try {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, username);
+            statement.setString(2, password);
+            statement.setString(3, role);
+            int rowsAffected = statement.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("User registered successfully.");
+            } else {
+                System.out.println("Failed to register user.");
+            }
+        } catch (SQLIntegrityConstraintViolationException e) {
+            // Handle the case where the username is already taken
+            sendMessage("Username is already taken. Please choose another username.");
+        } catch (SQLException e) {
+            // Handle other SQL exceptions
+            e.printStackTrace(); // You can log the exception for debugging purposes
+        } finally {
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace(); // Handle connection close exception
+            }
         }
+
+
         connection.close();
         loginL();
     }
@@ -171,9 +233,7 @@ public class ServerThread implements Runnable {
         ResultSet resultSet = statement.executeQuery(sql);
         while (resultSet.next()) {
             sendMessage(resultSet.getString("name") + " " + String.valueOf(resultSet.getDouble("price")) + " " + String.valueOf(resultSet.getInt("quantity")));
-//            sendMessage(String.valueOf(resultSet.getDouble("price")));
-//            sendMessage(String.valueOf(resultSet.getInt("quantity")));
-        }//sig trq da e do while ili nesh podobno kato quantityCheck
+        }
         sendMessage("done");
         connection.close();
         customerMenu(customer);
@@ -192,7 +252,7 @@ public class ServerThread implements Runnable {
             sendMessage(resultSet.getString("product_name" + " " + String.valueOf(resultSet.getDouble("sale_price")) + " " + String.valueOf(resultSet.getInt("quantity"))));
 //            System.out.println(resultSet.getDouble("sale_price"));
 //            System.out.println(resultSet.getInt("quantity"));
-        }//sig trq da e do while ili nesh podobno kato quantityCheck
+        }
         sendMessage("done");
         connection.close();
         customerMenu(cu);
@@ -284,22 +344,9 @@ public class ServerThread implements Runnable {
                 break;
         }
     }
-    public static void logAdm(int adminId, int userId, String action, Connection connection) {
-        String sql = "insert into adminLog(admin_id,user_id,action,date) values(?,?,?,now())";
-        try {
-            PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setInt(1, userId);
-            statement.setInt(2, adminId);
-            statement.setString(3, action);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
 
     public void makeAdmin() throws SQLException {
-        String sql = "update user set role='admin' where id=?";
+        String sql = "update user set role='admin' where user_id=?";
 
         int id = Integer.parseInt(getMessage());
         String username = getMessage();
@@ -330,7 +377,7 @@ public class ServerThread implements Runnable {
     }
 
     public void removeAdmin() throws SQLException {
-        String sql = "update user set role='user' where id=?";
+        String sql = "update user set role='user' where user_id=?";
 
         int id = Integer.parseInt(getMessage());
         String username = getMessage();
@@ -359,28 +406,22 @@ public class ServerThread implements Runnable {
         connection.close();
         adminMenu();
     }
-    public static boolean checkCampain(int id, Connection connection) throws SQLException {
-        String sql = "select campain_id from salesCampain where campain_id=?";
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setInt(1, id);
-        ResultSet resultSet = statement.executeQuery();
-        return resultSet.next();
-    }
 
-    public static boolean checkProduct(int id, Connection connection) throws SQLException {
-        String sql = "select product_id from products where product_id=?";
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setInt(1, id);
-        ResultSet resultSet = statement.executeQuery();
-        return resultSet.next();
-    }
     public void spravka() throws SQLException {
         //first=ot koga, last=do koga sig trq ima nqkva proverka tuka
         String first = getMessage();
         String second = getMessage();
+        LocalDate firstDate, secondDate;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate firstDate = LocalDate.parse(first, formatter);
-        LocalDate secondDate = LocalDate.parse(second, formatter);
+        try {
+            firstDate = LocalDate.parse(first, formatter);
+            secondDate = LocalDate.parse(second, formatter);
+        } catch (DateTimeParseException e) {
+            sendMessage("Wrong date format");
+            adminMenu();
+            return;
+        }
+        sendMessage("correct");
         if (secondDate.isBefore(firstDate)) {
             LocalDate temp = firstDate;
             firstDate = secondDate;
@@ -428,11 +469,12 @@ public class ServerThread implements Runnable {
                 break;
         }
         connection.close();
+        adminMenu();
     }
 
     public void addProduct(Connection connection) throws SQLException {
-        System.out.println("name,price,quantity,minPrice");
-        String sql = "insert into products values(?,?,?,?,?)";
+        System.out.println("name,price,quantity,minimalPrice");
+        String sql = "insert into products(name,price,quantity,minimalPrice) values(?,?,?,?)";
         String name = getMessage();
         double price = Double.parseDouble(getMessage());
         int quantity = Integer.parseInt(getMessage());
@@ -443,19 +485,19 @@ public class ServerThread implements Runnable {
         statement.setDouble(2, price);
         statement.setInt(3, quantity);
         statement.setDouble(4, minPrice);
-        statement.setInt(5, 1);
+        //statement.setInt(5, 1);
         int rowsAffected = statement.executeUpdate();
         if (rowsAffected > 0) {
-            System.out.println("Product added successfully.");
+            sendMessage("Product added successfully.");
         } else {
-            System.out.println("Failed to add product.");
+            sendMessage("Failed to add product.");
         }
     }
 
     public void redactProduct(Connection connection) throws SQLException {
         System.out.println("enter product id");
         int id = Integer.parseInt(getMessage());
-        String sql = "update products set name=?,price=?,quantity=?,minPrice=? where product_id=?";
+        String sql = "update products set name=?,price=?,quantity=?,minimalPrice=? where product_id=?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, getMessage());
         statement.setDouble(2, Double.parseDouble(getMessage()));
@@ -464,13 +506,14 @@ public class ServerThread implements Runnable {
         statement.setInt(5, id);
         int rowsAffected = statement.executeUpdate();
         if (rowsAffected > 0) {
-            System.out.println("Product updated successfully.");
+            sendMessage("Product updated successfully.");
         } else {
-            System.out.println("Failed to update product.");
+            sendMessage("Failed to update product.");
         }
     }
 
     public void removeProduct(Connection connection) throws SQLException {
+
         System.out.println("enter product id");
         int id = Integer.parseInt(getMessage());
         String sql = "delete from products where product_id=?";
@@ -478,37 +521,27 @@ public class ServerThread implements Runnable {
         statement.setInt(1, id);
         int rowsAffected = statement.executeUpdate();
         if (rowsAffected > 0) {
-            System.out.println("Product removed successfully.");
+            sendMessage("Product removed successfully.");
         } else {
-            System.out.println("Failed to remove product.");
+            sendMessage("Failed to remove product.");
         }
     }
 
     public void quantityCheck() throws SQLException {
         connection = DatabaseManager.getConnection();
         int numberOfProducts = Integer.parseInt(getMessage());
-        String sql = "select id,quantity from products where quantity < ?";
+        String sql = "select product_id,quantity from products where quantity < ?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setInt(1, numberOfProducts);
         // Statement statement = connection.createStatement();
-        ResultSet resultSet = statement.executeQuery(sql);
+        ResultSet resultSet = statement.executeQuery();
         while (resultSet.next()) {
-            writer.println(resultSet.getString("id") + " " + resultSet.getInt("quantity"));
+            writer.println(resultSet.getString("product_id") + " " + resultSet.getInt("quantity"));
         }
+        sendMessage("done");
         connection.close();
-        /*
-         public void receiveMessages() {
-        try {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println("Message from server: " + line);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        }
-        nesh takova trq da e v clienta
-         */
+
+        adminMenu();
     }
 
     public void salesMenu() throws SQLException {
