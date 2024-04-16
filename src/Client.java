@@ -135,17 +135,7 @@ public class Client {
             System.out.println("Message from server: " + line);
         }
         usermenu();
-//        try {
-//            String line;
-//            while (reader.hasNextLine()) {
-//                line = reader.nextLine();
-//                System.out.println("Message from server: " + line);
-//            }
-//            usermenu();
-//        } catch (NoSuchElementException | IllegalStateException e) {
-//            e.printStackTrace();
-//            // Handle the exception here, such as closing resources or logging the error.
-//        }
+
     }
 
     public static void browsePromotionalProducts() {
@@ -233,7 +223,6 @@ public class Client {
         System.out.println("Enter startDate and endDate in format: YYYY-MM-DD");
         String startDate = scanner.nextLine();
         String endDate = scanner.nextLine();
-        // String message = startDate + ":" + endDate;
         sendMessage(startDate);
         sendMessage(endDate);
         String test = reader.nextLine();

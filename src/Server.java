@@ -28,12 +28,12 @@ public class Server {
 
             ServerSocket serverSocket = new ServerSocket(1312);
 
-            while (true){
+            while (!serverSocket.isClosed()) {
                 Socket socket=serverSocket.accept();
                 Connection connection = DatabaseManager.getConnection();//ako nesh stane stva trq mahna ot tuka
-                new Thread(new ServerThread(socket,connection/*,dataSource*/)).start();
+                new Thread(new ServerThread(socket,connection)).start();
             }
-        }catch (/*ClassNotFoundException |*/ SQLException e) {
+        }catch (/*ClassNotFoundException |*/ IOException|SQLException e ){
             e.printStackTrace();
         }
     }

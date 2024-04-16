@@ -1,5 +1,3 @@
-import org.apache.commons.dbcp2.BasicDataSource;
-
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
@@ -7,13 +5,11 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Scanner;
 
 public class ServerThread implements Runnable {
     // private ArrayList<User> users;
-    private Socket socket;
+    private final Socket socket;
     private Scanner reader;
     private PrintStream writer;
 
@@ -93,7 +89,7 @@ public class ServerThread implements Runnable {
                 socket.close();
                 connection.close();
             } catch (IOException | SQLException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         }
 
@@ -118,7 +114,6 @@ public class ServerThread implements Runnable {
         String password = getMessage();
         String role;
         int id;
-        //Statement statement = connection.createStatement();
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, username);
         statement.setString(2, password);
@@ -147,19 +142,9 @@ public class ServerThread implements Runnable {
         String message = getMessage();
         String[] parts = message.split(":");
         String username = parts[0];
-        String password = parts[1]; //should be hashed client side and we receive the hash only
+        String password = parts[1];
         String role = "user";
 
-//        PreparedStatement statement = connection.prepareStatement(sql);
-//        statement.setString(1, username);
-//        statement.setString(2, password);
-//        statement.setString(3, role);
-//        int rowsAffected = statement.executeUpdate();
-//        if (rowsAffected > 0) {
-//            System.out.println("User registered successfully.");
-//        } else {
-//            System.out.println("Failed to register user.");
-//        }
         try {
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, username);
@@ -188,13 +173,13 @@ public class ServerThread implements Runnable {
         }
 
 
+        assert connection != null;
         connection.close();
         loginL();
     }
 
     public void customerMenu(Customer customer) throws SQLException {
         int choice;
-
 
         do {
             System.out.println("Меню за клиенти:");
@@ -241,17 +226,24 @@ public class ServerThread implements Runnable {
 
     public void browsePromotionalProducts(Customer cu) throws SQLException {
         connection = DatabaseManager.getConnection();
-        String sql = "SELECT p.name AS product_name, s.new_price AS sale_price, p.quantity\n" +
-                "FROM products p\n" +
-                "JOIN sales s ON p.product_id = s.product_id\n" +
-                "JOIN salesCampain sc ON s.campain_id = sc.campain_id\n" +
-                "WHERE sc.isActive = 1\n";
+        String sql = """
+                SELECT p.name AS product_name, s.new_price AS sale_price, p.quantity
+                FROM products p
+                JOIN sales s ON p.product_id = s.product_id
+                JOIN salesCampain sc ON s.campain_id = sc.campain_id
+                WHERE sc.isActive = 1
+                """;
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(sql);
         while (resultSet.next()) {
-            sendMessage(resultSet.getString("product_name" + " " + String.valueOf(resultSet.getDouble("sale_price")) + " " + String.valueOf(resultSet.getInt("quantity"))));
+            //sendMessage(resultSet.getString("product_name" + " " + String.valueOf(resultSet.getDouble("sale_price")) + " " + String.valueOf(resultSet.getInt("quantity"))));
 //            System.out.println(resultSet.getDouble("sale_price"));
 //            System.out.println(resultSet.getInt("quantity"));
+            String productName = resultSet.getString("product_name");
+            double salePrice = resultSet.getDouble("sale_price");
+            int quantity = resultSet.getInt("quantity");
+
+            sendMessage(productName + " " + salePrice + " " + quantity);
         }
         sendMessage("done");
         connection.close();
@@ -661,7 +653,7 @@ public class ServerThread implements Runnable {
         int discount_percentage = Integer.parseInt(getMessage());
         connection = DatabaseManager.getConnection();
 
-        double discount_price = 0; // Initialize discount_price outside the loop
+        double discount_price ; // Initialize discount_price outside the loop
 
         while (true) {
             discount_price = checkDiscount(product_id, discount_percentage, connection);
