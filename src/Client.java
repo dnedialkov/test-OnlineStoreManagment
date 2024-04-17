@@ -175,7 +175,7 @@ public class Client {
         usermenu();
     }
 
-    public static void adminmenu() throws NoSuchAlgorithmException {
+    public static void adminmenu() {
         System.out.println("Admin menu");
         System.out.println("1. Spravka");
         System.out.println("2. Redact menu");
@@ -185,8 +185,21 @@ public class Client {
         System.out.println("6. Remove admin");
         System.out.println("7. Exit");
         System.out.println("Enter your choice");
-        int choice = Integer.parseInt(scanner.nextLine());
+
+        int choice ;//= Integer.parseInt(scanner.nextLine());
+        //sendMessage(String.valueOf(choice));
+
+        while (true) {
+            //System.out.println("Enter your choice (1-7):");
+            try {
+                choice = Integer.parseInt(scanner.nextLine());
+                break; // Exit the loop if input is valid
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
         sendMessage(String.valueOf(choice));
+
         switch (choice) {
             case 1:
                 spravka();
@@ -215,7 +228,7 @@ public class Client {
         }
     }
 
-    public static void spravka() throws NoSuchAlgorithmException {
+    public static void spravka() {
         System.out.println("Enter startDate and endDate in format: YYYY-MM-DD");
         String startDate = scanner.nextLine();
         String endDate = scanner.nextLine();
@@ -236,7 +249,7 @@ public class Client {
         adminmenu();
     }
 
-    public static void redactMenu() throws NoSuchAlgorithmException {
+    public static void redactMenu() {
         System.out.println("1. Add product");
         System.out.println("2. Redact product");
         System.out.println("3. Remove product");
@@ -259,7 +272,7 @@ public class Client {
         adminmenu();
     }
 
-    public static void salesMenu() throws NoSuchAlgorithmException {
+    public static void salesMenu() {
         System.out.println("1. Start sale");
         System.out.println("2. Stop sale");
         System.out.println("3. Manage sale");
@@ -302,7 +315,8 @@ public class Client {
         String line = reader.nextLine();
         System.out.println(line);
     }
-    public static void createCampaign() throws NoSuchAlgorithmException {
+
+    public static void createCampaign() {
         scanner.nextLine();
         System.out.println("Enter campaign start date in format: YYYY-MM-DD");
         String startDate = scanner.nextLine();
@@ -383,6 +397,9 @@ public class Client {
         }
         String line = reader.nextLine();
         System.out.println(line);
+
+        adminmenu();
+
     }
 
 
@@ -408,6 +425,8 @@ public class Client {
         }
         String line = reader.nextLine();
         System.out.println(line);
+
+        adminmenu();
     }
 
     public static void changeDiscountPercentage() {
@@ -423,15 +442,15 @@ public class Client {
         while (true) {
             String response = reader.nextLine();
             if (response.equals("success")) break;
-            else if (response.equals("Wrong product ID. Please enter a valid product ID.")) {
+            else if (response.equals("Wrong product ID. Please enter a valid product ID:")) {
                 System.out.println(response);
                 productId = scanner.nextInt();
                 sendMessage(String.valueOf(productId));
-            } else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID.")) {
+            } else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID:")) {
                 System.out.println(response);
                 id = scanner.nextInt();
                 sendMessage(String.valueOf(id));
-            } else if (response.equals("Wrong discount percentage. Please enter a valid discount percentage.")) {
+            } else if (response.equals("Discount percentage is too high. Please enter a valid discount percentage:")) {
                 System.out.println(response);
                 discountPercentage = scanner.nextInt();
                 sendMessage(String.valueOf(discountPercentage));
@@ -439,6 +458,7 @@ public class Client {
         }
         String line = reader.nextLine();
         System.out.println(line);
+        adminmenu();
     }
 
 
@@ -539,7 +559,7 @@ public class Client {
 
     }
 
-    public static void quantityCheck() throws NoSuchAlgorithmException {
+    public static void quantityCheck() {
         System.out.println("Enter minimum number of products");
         //int min = Integer.parseInt(scanner.nextLine());
         String min = scanner.nextLine();
@@ -553,41 +573,57 @@ public class Client {
         adminmenu();
     }
 
-    public static void addAdmin() throws NoSuchAlgorithmException {
+    public static void addAdmin() {
 
         System.out.println("Enter id of the user you want to make admin");
         int id = scanner.nextInt();
         scanner.nextLine();
         sendMessage(String.valueOf(id));
-        System.out.println("Enter your username");
-        String username = scanner.nextLine();
-        sendMessage(username);
+//        System.out.println("Enter your username");
+//        String username = scanner.nextLine();
+//        sendMessage(username);
         System.out.println("Enter your password");
         String password = scanner.nextLine();
-        password = PasswordHasher.hashPassword(password);
+        try {
+            password = PasswordHasher.hashPassword(password);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
         sendMessage(password);
 
         String response = reader.nextLine();
         System.out.println(response);
+
+
+        adminmenu();
+
     }
 
-    public static void removeAdmin() throws NoSuchAlgorithmException {
+    public static void removeAdmin() {
         System.out.println("Enter id of the user you want to remove from admin");
         int id = scanner.nextInt();
         scanner.nextLine();
         sendMessage(String.valueOf(id));
-        System.out.println("Enter your username");
-        String username = scanner.nextLine();
-        sendMessage(username);
+//        System.out.println("Enter your username");
+//        String username = scanner.nextLine();
+//        sendMessage(username);
         System.out.println("Enter your password");
         String password = scanner.nextLine();
-        password = PasswordHasher.hashPassword(password);
+        try {
+            password = PasswordHasher.hashPassword(password);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
         sendMessage(password);
 
         String response = reader.nextLine();
         System.out.println(response);
 
+
         adminmenu();
+
     }
 
 

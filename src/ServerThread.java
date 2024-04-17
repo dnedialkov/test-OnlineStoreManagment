@@ -14,6 +14,9 @@ public class ServerThread implements Runnable {
     private Scanner reader;
     private PrintStream writer;
 
+    private Customer customer;
+    private Admin admin;
+
 
     private Connection connection; //Conection pool?
     //private BasicDataSource dataSource;
@@ -75,21 +78,32 @@ public class ServerThread implements Runnable {
                 case 3:
                     break;
                 case 4://remove later
+                    admin=new Admin(1,"admin");
                     adminMenu();
                     break;
                 case 5://remove later
-                    customerMenu(new Customer(2, "user"));
+                    customer=new Customer(2,"user");
+                    customerMenu();
             }
             //loginL();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
+        } catch (NoSuchElementException e) {
+            System.out.println("Connection closed?");
+        }
+         finally {
             try {
-                reader.close();
-                writer.close();
+                if (reader != null) {
+                    reader.close();
+                }
+                if (writer != null) {
+                    writer.close();
+                }
                 socket.close();
-                connection.close();
+                if (connection != null) {
+                    connection.close();
+                }
                 System.out.println("Disconnected");
             } catch (IOException | SQLException e) {
                 e.printStackTrace();
@@ -108,20 +122,16 @@ public class ServerThread implements Runnable {
     }
 
     public String getMessage() {
-        try {
+//        try {
             return reader.nextLine();
-        }catch (NoSuchElementException e){
-            System.out.println("Connection closed?");
-            return null;
-        }
+//        }catch (NoSuchElementException e){
+//            System.out.println("Connection closed?");
+//            return null;
+//        }
     }
 
     public void loginL() throws SQLException {
         String sql = "select user_id,role from user where username=? and passwordH=?";
-//        String message=getMessage();
-//        String[] parts=message.split(":");
-//        String username=parts[0];
-//        String password=parts[1]; //should be hashed client side and we receive the hash only
         String username = getMessage();
         if (username.isEmpty()) return;
         String password = getMessage();
@@ -143,10 +153,12 @@ public class ServerThread implements Runnable {
         sendMessage("Login Successful");
         if (role.equals("user")) {
             sendMessage("1");
-            customerMenu(new Customer(id, username));
+            customer=new Customer(id,username);
+            customerMenu();
         } else {
             sendMessage("2");
-            adminMenu(/*new Admin(id,username*/);
+            admin = new Admin(id, username);
+            adminMenu();
         }
     }
 
@@ -191,7 +203,7 @@ public class ServerThread implements Runnable {
         loginL();
     }
 
-    public void customerMenu(Customer customer) throws SQLException {
+    public void customerMenu(/*Customer customer*/) throws SQLException {
         int choice;
 
         do {
@@ -206,13 +218,13 @@ public class ServerThread implements Runnable {
 
             switch (choice) {
                 case 1:
-                    browseAllProducts(customer);
+                    browseAllProducts();
                     break;
                 case 2:
-                    browsePromotionalProducts(customer);
+                    browsePromotionalProducts();
                     break;
                 case 3:
-                    orderProduct(customer);
+                    orderProduct();
                     break;
                 case 0:
                     System.out.println("Изход от менюто за клиенти.");
@@ -224,7 +236,7 @@ public class ServerThread implements Runnable {
 
     }
 
-    public void browseAllProducts(Customer customer) throws SQLException {
+    public void browseAllProducts() throws SQLException {
         connection = DatabaseManager.getConnection();
         String sql = "select products.name,products.price,products.quantity from products";
         Statement statement = connection.createStatement();
@@ -234,10 +246,10 @@ public class ServerThread implements Runnable {
         }
         sendMessage("done");
         connection.close();
-        customerMenu(customer);
+        customerMenu();
     }
 
-    public void browsePromotionalProducts(Customer cu) throws SQLException {
+    public void browsePromotionalProducts() throws SQLException {
         connection = DatabaseManager.getConnection();
         String sql = """
                 SELECT p.name AS product_name, s.new_price AS sale_price, p.quantity
@@ -260,10 +272,10 @@ public class ServerThread implements Runnable {
         }
         sendMessage("done");
         connection.close();
-        customerMenu(cu);
+        customerMenu();
     }
 
-    public void orderProduct(Customer customer) throws SQLException {
+    public void orderProduct() throws SQLException {
         connection = DatabaseManager.getConnection();
         int product_id = Integer.parseInt(getMessage());
         int quantity = Integer.parseInt(getMessage());
@@ -316,7 +328,7 @@ public class ServerThread implements Runnable {
         statement3.executeUpdate();
         connection.close();
         sendMessage("Order successful");
-        customerMenu(customer);
+        customerMenu();
     }
 
     public void adminMenu(/*Admin admin*/) throws SQLException {
@@ -354,7 +366,7 @@ public class ServerThread implements Runnable {
         String sql = "update user set role='admin' where user_id=?";
 
         int id = Integer.parseInt(getMessage());
-        String username = getMessage();
+        String username = admin.getUsername();
         String password = getMessage();
         String checkSql = "select * from user where username=? and passwordH=?";
         connection = DatabaseManager.getConnection();
@@ -385,7 +397,7 @@ public class ServerThread implements Runnable {
         String sql = "update user set role='user' where user_id=?";
 
         int id = Integer.parseInt(getMessage());
-        String username = getMessage();
+        String username = admin.getUsername();
         String password = getMessage();
         String checkSql = "select * from user where username=? and passwordH=?";
         connection = DatabaseManager.getConnection();
@@ -414,8 +426,11 @@ public class ServerThread implements Runnable {
 
     public void spravka() throws SQLException {
         //first=ot koga, last=do koga sig trq ima nqkva proverka tuka
+        //System.out.println("test");
         String first = getMessage();
+       // System.out.println(first);
         String second = getMessage();
+       // System.out.println(second);
         LocalDate firstDate, secondDate;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         try {
@@ -706,15 +721,15 @@ public class ServerThread implements Runnable {
             System.out.println(discount_price);
 
             if (discount_price == 0.0) {
-                System.out.println("discount");
+               // System.out.println("discount");
                 sendMessage("Discount percentage is too high. Please enter a valid discount percentage:");
                 discount_percentage = Integer.parseInt(getMessage());
             } else if (discount_price == -1) {
-                System.out.println("product id");
+               // System.out.println("product id");
                 sendMessage("Wrong product ID. Please enter a valid product ID:");
                 product_id = Integer.parseInt(getMessage());
             } else if (!checkCampain(campaign_id, connection)) {
-                System.out.println("wrong campaign id");
+               // System.out.println("wrong campaign id");
                 sendMessage("Wrong campaign ID. Please enter a valid campaign ID:");
                 campaign_id = Integer.parseInt(getMessage());
             } else {
@@ -738,6 +753,7 @@ public class ServerThread implements Runnable {
         }
 
         connection.close();
+        adminMenu();
     }
 
     public void removeProductFromCampaign() throws SQLException {
@@ -765,11 +781,12 @@ public class ServerThread implements Runnable {
         statement.setInt(2, product_id);
         int rowsAffected = statement.executeUpdate();
         if (rowsAffected > 0) {
-            System.out.println("Product removed successfully.");
+            sendMessage("Product removed successfully.");
         } else {
-            System.out.println("Failed to remove product.");
+            sendMessage("Failed to remove product.");
         }
         connection.close();
+        adminMenu();
     }
 
     public void changeDiscountPercentage() throws SQLException {
@@ -798,7 +815,7 @@ public class ServerThread implements Runnable {
             } else if (discount_price == -1) {
                 sendMessage("Wrong product ID. Please enter a valid product ID:");
                 product_id = Integer.parseInt(getMessage());
-            } else if ((checkCampain(campaign_id, connection))) {
+            } else if ((!checkCampain(campaign_id, connection))) {
                 sendMessage("Wrong campaign ID. Please enter a valid campaign ID:");
                 campaign_id = Integer.parseInt(getMessage());
             } else {
@@ -807,7 +824,7 @@ public class ServerThread implements Runnable {
             }
         }
 
-        String sql = "update sales set discount_percentage=?,new_price=? where campain_id=? and product_id=?";
+        String sql = "update sales set discount=?,new_price=? where campain_id=? and product_id=?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setInt(1, discount_percentage);
         statement.setDouble(2, discount_price);
@@ -815,11 +832,12 @@ public class ServerThread implements Runnable {
         statement.setInt(4, product_id);
         int rowsAffected = statement.executeUpdate();
         if (rowsAffected > 0) {
-            System.out.println("Discount percentage updated successfully.");
+            sendMessage("Discount percentage updated successfully.");
         } else {
-            System.out.println("Failed to update discount percentage.");
+            sendMessage("Failed to update discount percentage.");
         }
         connection.close();
+        adminMenu();
     }
 
     public void adjustStartDate() throws SQLException {
