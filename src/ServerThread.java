@@ -78,11 +78,11 @@ public class ServerThread implements Runnable {
                 case 3:
                     break;
                 case 4://remove later
-                    admin=new Admin(1,"admin");
+                    admin = new Admin(1, "admin");
                     adminMenu();
                     break;
                 case 5://remove later
-                    customer=new Customer(2,"user");
+                    customer = new Customer(2, "user");
                     customerMenu();
             }
             //loginL();
@@ -91,8 +91,7 @@ public class ServerThread implements Runnable {
             throw new RuntimeException(e);
         } catch (NoSuchElementException e) {
             System.out.println("Connection closed?");
-        }
-         finally {
+        } finally {
             try {
                 if (reader != null) {
                     reader.close();
@@ -115,7 +114,7 @@ public class ServerThread implements Runnable {
     public void sendMessage(String message) {
         try {
             writer.println(message);
-        }catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             System.out.println("Connection closed?");
             return;
         }
@@ -123,7 +122,7 @@ public class ServerThread implements Runnable {
 
     public String getMessage() {
 //        try {
-            return reader.nextLine();
+        return reader.nextLine();
 //        }catch (NoSuchElementException e){
 //            System.out.println("Connection closed?");
 //            return null;
@@ -131,29 +130,44 @@ public class ServerThread implements Runnable {
     }
 
     public void loginL() throws SQLException {
+        int maxAttempts = 3, attempts = 0;
         String sql = "select user_id,role from user where username=? and passwordH=?";
-        String username = getMessage();
-        if (username.isEmpty()) return;
-        String password = getMessage();
-        String role;
-        int id;
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setString(1, username);
-        statement.setString(2, password);
-        ResultSet resultSet = statement.executeQuery();
-        if (resultSet.next()) {
-            id = resultSet.getInt("user_id");
-            role = resultSet.getString("role");
-        } else {
-            sendMessage("wrong username or password");
-            loginL();
-            return;
+        String role = null;
+        int id = 0;
+        String username = null;
+        String password;
+
+        while (attempts < maxAttempts) {
+            username = getMessage();
+            if (username.isEmpty()) return;
+
+            password = getMessage();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, username);
+            statement.setString(2, password);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                id = resultSet.getInt("user_id");
+                role = resultSet.getString("role");
+                sendMessage("Login Successful");
+                break; // Exit the loop if login successful
+            } else {
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    sendMessage("Max attempts reached. You are disconnected.");
+                    return; // Disconnect user
+                }
+                sendMessage("Wrong username or password. Attempts left: " + (maxAttempts - attempts));
+            }
         }
+
         connection.close();
-        sendMessage("Login Successful");
+
+        //sendMessage("Login Successful");
         if (role.equals("user")) {
             sendMessage("1");
-            customer=new Customer(id,username);
+            customer = new Customer(id, username);
             customerMenu();
         } else {
             sendMessage("2");
@@ -207,12 +221,12 @@ public class ServerThread implements Runnable {
         int choice;
 
         do {
-            System.out.println("Меню за клиенти:");
-            System.out.println("1. Разгледай всички налични продукти");
-            System.out.println("2. Разгледай продукти от кампании с промоции и разпродажби");
-            System.out.println("3. Поръчай продукт");
-            System.out.println("0. Изход");
-            System.out.print("Изберете опция: ");
+//            System.out.println("Меню за клиенти:");
+//            System.out.println("1. Разгледай всички налични продукти");
+//            System.out.println("2. Разгледай продукти от кампании с промоции и разпродажби");
+//            System.out.println("3. Поръчай продукт");
+//            System.out.println("0. Изход");
+//            System.out.print("Изберете опция: ");
 
             choice = Integer.parseInt(getMessage());
 
@@ -428,9 +442,9 @@ public class ServerThread implements Runnable {
         //first=ot koga, last=do koga sig trq ima nqkva proverka tuka
         //System.out.println("test");
         String first = getMessage();
-       // System.out.println(first);
+        // System.out.println(first);
         String second = getMessage();
-       // System.out.println(second);
+        // System.out.println(second);
         LocalDate firstDate, secondDate;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         try {
@@ -713,7 +727,7 @@ public class ServerThread implements Runnable {
         int discount_percentage = Integer.parseInt(getMessage());
         connection = DatabaseManager.getConnection();
 
-        double discount_price ; // Initialize discount_price outside the loop
+        double discount_price; // Initialize discount_price outside the loop
 
         while (true) {
 
@@ -721,15 +735,15 @@ public class ServerThread implements Runnable {
             System.out.println(discount_price);
 
             if (discount_price == 0.0) {
-               // System.out.println("discount");
+                // System.out.println("discount");
                 sendMessage("Discount percentage is too high. Please enter a valid discount percentage:");
                 discount_percentage = Integer.parseInt(getMessage());
             } else if (discount_price == -1) {
-               // System.out.println("product id");
+                // System.out.println("product id");
                 sendMessage("Wrong product ID. Please enter a valid product ID:");
                 product_id = Integer.parseInt(getMessage());
             } else if (!checkCampain(campaign_id, connection)) {
-               // System.out.println("wrong campaign id");
+                // System.out.println("wrong campaign id");
                 sendMessage("Wrong campaign ID. Please enter a valid campaign ID:");
                 campaign_id = Integer.parseInt(getMessage());
             } else {
@@ -861,7 +875,7 @@ public class ServerThread implements Runnable {
         resultSet.next();
         String endDate = resultSet.getString("campainEnd");
         if (start_date.compareTo(endDate) < 0) {
-            String sql = "update salesCampain set start_date=? where campain_id=?";
+            String sql = "update salesCampain set campainStart=? where campain_id=?";
             PreparedStatement statement1 = connection.prepareStatement(sql);
             statement1.setString(1, start_date);
             statement1.setInt(2, campaign_id);
@@ -874,20 +888,11 @@ public class ServerThread implements Runnable {
         } else {
             sendMessage("Start date must be before end date");
             connection.close();
+            adminMenu();
             return;
         }
-
-//        String sql="update salesCampain set start_date=? where campain_id=?";
-//        PreparedStatement statement = connection.prepareStatement(sql);
-//        statement.setString(1,start_date);
-//        statement.setInt(2,campaign_id);
-//        int rowsAffected = statement.executeUpdate();
-//        if (rowsAffected > 0) {
-//            System.out.println("Start date updated successfully.");
-//        } else {
-//            System.out.println("Failed to update start date.");
-//        }
-//        connection.close();
+        connection.close();
+        adminMenu();
     }
 
     public void adjustEndDate() throws SQLException {
@@ -911,7 +916,7 @@ public class ServerThread implements Runnable {
         resultSet.next();
         String startDate = resultSet.getString("campainStart");
         if (end_date.compareTo(startDate) > 0) {
-            String sql = "update salesCampain set end_date=? where campain_id=?";
+            String sql = "update salesCampain set campainEnd=? where campain_id=?";
             PreparedStatement statement1 = connection.prepareStatement(sql);
             statement1.setString(1, end_date);
             statement1.setInt(2, campaign_id);
@@ -924,21 +929,10 @@ public class ServerThread implements Runnable {
         } else {
             sendMessage("End date must be after start date");
             connection.close();
+            adminMenu();
         }
-
-
-//        String sql="update salesCampain set end_date=? where campain_id=?";
-//        PreparedStatement statement = connection.prepareStatement(sql);
-//        statement.setString(1,end_date);
-//        statement.setInt(2,campaign_id);
-//        int rowsAffected = statement.executeUpdate();
-//        if (rowsAffected > 0) {
-//            System.out.println("End date updated successfully.");
-//        } else {
-//            System.out.println("Failed to update end date.");
-//        }
-//        connection.close();
-
+        connection.close();
+        adminMenu();
     }
 
 }

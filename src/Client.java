@@ -59,21 +59,42 @@ public class Client {
     }
 
     public static void login() throws NoSuchAlgorithmException {
-        System.out.println("Enter username");
-        String username = scanner.nextLine();
-        if (username.isEmpty()) exit(1);
-        System.out.println("Enter password");
-        String password = scanner.nextLine();
-        password = PasswordHasher.hashPassword(password);
-        //String message = username + ":" + password;
-        sendMessage(username);
-        sendMessage(password);
-        //getMessage();
-        if (reader.nextLine().equals("wrong username or password")) {
-            System.out.println("Wrong username or password");
-            login();
-            exit(1);
+//        System.out.println("Enter username");
+//        String username = scanner.nextLine();
+//        if (username.isEmpty()) exit(1);
+//        System.out.println("Enter password");
+//        String password = scanner.nextLine();
+//        password = PasswordHasher.hashPassword(password);
+//        sendMessage(username);
+//        sendMessage(password);
+//        if (reader.nextLine().equals("wrong username or password")) {
+//            System.out.println("Wrong username or password");
+//            login();
+//            exit(1);
+//        }
+        while (true) {
+            System.out.println("Enter username");
+            String username = scanner.nextLine();
+            if (username.isEmpty()) exit(1);
+            System.out.println("Enter password");
+            String password = scanner.nextLine();
+            password = PasswordHasher.hashPassword(password);
+            sendMessage(username);
+            sendMessage(password);
+            String line = reader.nextLine();
+            if (line.equals("Login Successful")) {
+                System.out.println(line);
+                break;
+            }else if (line.equals("Max attempts reached. You are disconnected.")) {
+                System.out.println(line);
+                exit(1);
+            }else {
+                System.out.println(line);
+            }
         }
+
+
+
         int choice = Integer.parseInt(reader.nextLine());
         if (choice == 1) {
             usermenu();
@@ -465,6 +486,7 @@ public class Client {
     public static void adjustStartDate() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
+        scanner.nextLine();
         sendMessage(String.valueOf(id));
         System.out.println("Enter new start date");
         String startDate = scanner.nextLine();
@@ -480,11 +502,13 @@ public class Client {
         }
         String line = reader.nextLine();
         System.out.println(line);
+        adminmenu();
     }
 
     public static void adjustEndDate() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
+        scanner.nextLine();
         sendMessage(String.valueOf(id));
         System.out.println("Enter new end date");
         String endDate = scanner.nextLine();
@@ -500,6 +524,7 @@ public class Client {
         }
         String line = reader.nextLine();
         System.out.println(line);
+        adminmenu();
     }
 
 
