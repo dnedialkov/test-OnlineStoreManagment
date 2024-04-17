@@ -81,6 +81,7 @@ public class ServerThread implements Runnable {
                     customerMenu(new Customer(2, "user"));
             }
             //loginL();
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {

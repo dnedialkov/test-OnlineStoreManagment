@@ -385,6 +385,7 @@ public class Client {
         System.out.println(line);
     }
 
+
     public static void removeProductFromCampaign() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
