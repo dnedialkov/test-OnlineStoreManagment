@@ -51,11 +51,9 @@ public class Client {
             register();
         } else if (message.equals("3")) {
             exit(0);
-        }
-        else if (message.equals("4")) {
+        } else if (message.equals("4")) {
             adminmenu();//remove later
-        }
-        else if (message.equals("5")) {
+        } else if (message.equals("5")) {
             usermenu();//remove later
         }
     }
@@ -92,18 +90,16 @@ public class Client {
         password = PasswordHasher.hashPassword(password);
         String message = username + ":" + password;
         sendMessage(message);
-        String line= reader.nextLine();
+        String line = reader.nextLine();
         if (line.equals("User registered successfully.")) {
             System.out.println(line);
             login();
-        }
-        else if (line.equals("Username is already taken. Please choose another username.")) {
+        } else if (line.equals("Username is already taken. Please choose another username.")) {
             System.out.println(line);
             //register();
-        }
-        else {
+        } else {
             System.out.println("Something went wrong. Please try again");
-           // register();
+            // register();
         }
     }
 
@@ -263,10 +259,11 @@ public class Client {
         adminmenu();
     }
 
-    public static void salesMenu() {
+    public static void salesMenu() throws NoSuchAlgorithmException {
         System.out.println("1. Start sale");
         System.out.println("2. Stop sale");
         System.out.println("3. Manage sale");
+        System.out.println("4. Create campaign");
         int choice = scanner.nextInt();
         sendMessage(String.valueOf(choice));
         switch (choice) {
@@ -279,6 +276,9 @@ public class Client {
             case 3:
                 manageSale();
                 break;
+            case 4:
+                createCampaign();
+                break;
             default:
                 System.out.println("Невалиден избор. Моля, опитайте отново.");
                 break;
@@ -288,6 +288,7 @@ public class Client {
     public static void startSale() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
+        scanner.nextLine();
         sendMessage(String.valueOf(id));
         String line = reader.nextLine();
         System.out.println(line);
@@ -296,8 +297,27 @@ public class Client {
     public static void stopSale() {
         System.out.println("Enter campaign id");
         int id = scanner.nextInt();
+        scanner.nextLine();
         sendMessage(String.valueOf(id));
         String line = reader.nextLine();
+        System.out.println(line);
+    }
+    public static void createCampaign() throws NoSuchAlgorithmException {
+        scanner.nextLine();
+        System.out.println("Enter campaign start date in format: YYYY-MM-DD");
+        String startDate = scanner.nextLine();
+        System.out.println("Enter campaign end date in format: YYYY-MM-DD");
+        String endDate = scanner.nextLine();
+        sendMessage(startDate);
+        sendMessage(endDate);
+
+        String line = reader.nextLine();
+        if (!line.equals("correct")) {
+            System.out.println(line);
+            adminmenu();
+            return;
+        }
+        line = reader.nextLine();
         System.out.println(line);
     }
 
@@ -343,19 +363,20 @@ public class Client {
         System.out.println("Enter discount percentage");
         int discountPercentage = scanner.nextInt();
         sendMessage(String.valueOf(discountPercentage));
+
         while (true) {
             String response = reader.nextLine();
             if (response.equals("success")) break;
-            else if (response.equals("Wrong product ID. Please enter a valid product ID.")) {
-                System.out.println("Wrong product ID. Please enter a valid product ID.");
+            else if (response.equals("Wrong product ID. Please enter a valid product ID:")) {
+                System.out.println(response);
                 productId = scanner.nextInt();
                 sendMessage(String.valueOf(productId));
-            } else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID.")) {
-                System.out.println("Wrong campaign ID. Please enter a valid campaign ID.");
+            } else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID:")) {
+                System.out.println(response);
                 id = scanner.nextInt();
                 sendMessage(String.valueOf(id));
-            } else if (response.equals("Wrong discount percentage. Please enter a valid discount percentage.")) {
-                System.out.println("Wrong discount percentage. Please enter a valid discount percentage.");
+            } else if (response.equals("Discount percentage is too high. Please enter a valid discount percentage:")) {
+                System.out.println(response);
                 discountPercentage = scanner.nextInt();
                 sendMessage(String.valueOf(discountPercentage));
             }
@@ -418,6 +439,7 @@ public class Client {
         String line = reader.nextLine();
         System.out.println(line);
     }
+
 
     public static void adjustStartDate() {
         System.out.println("Enter campaign id");

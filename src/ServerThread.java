@@ -5,6 +5,7 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class ServerThread implements Runnable {
@@ -88,6 +89,7 @@ public class ServerThread implements Runnable {
                 writer.close();
                 socket.close();
                 connection.close();
+                System.out.println("Disconnected");
             } catch (IOException | SQLException e) {
                 e.printStackTrace();
             }
@@ -96,11 +98,21 @@ public class ServerThread implements Runnable {
     }
 
     public void sendMessage(String message) {
-        writer.println(message);
+        try {
+            writer.println(message);
+        }catch (NoSuchElementException e){
+            System.out.println("Connection closed?");
+            return;
+        }
     }
 
     public String getMessage() {
-        return reader.nextLine();
+        try {
+            return reader.nextLine();
+        }catch (NoSuchElementException e){
+            System.out.println("Connection closed?");
+            return null;
+        }
     }
 
     public void loginL() throws SQLException {
@@ -549,15 +561,14 @@ public class ServerThread implements Runnable {
                 manageSale();
                 break;
             case 4:
+                createCampaign();
+                break;
+            case 5:
                 break;
         }
     }
 
     public void startSale() throws SQLException {
-        // Implement logic to start a sales campaign
-        // Prompt user for campaign details: name, products included, discount percentage, start date, end date
-        // Perform necessary database operations to store campaign details
-
         Connection con = DatabaseManager.getConnection();
         int campaign_id = Integer.parseInt(getMessage());
         String sql = "update salesCampain set isActive=1 where campain_id=?";
@@ -565,19 +576,14 @@ public class ServerThread implements Runnable {
         statement.setInt(1, campaign_id);
         int rowsAffected = statement.executeUpdate();
         if (rowsAffected > 0) {
-            System.out.println("Campaign started successfully.");
+            sendMessage("Campaign started successfully.");
         } else {
-            System.out.println("Failed to start campaign.");
+            sendMessage("Failed to start campaign.");
         }
         con.close();
-        //? nz dali da e taka
     }
 
     public void stopSale() throws SQLException {
-        // Implement logic to stop a sales campaign
-        // Prompt user to select the campaign to stop
-        // Update database to mark the campaign as stopped
-        sendMessage("Select campaign to stop:");
         int campaign_id = Integer.parseInt(getMessage());
         Connection con = DatabaseManager.getConnection();
         String sql = "update salesCampain set isActive=0 where campain_id=?";
@@ -585,12 +591,11 @@ public class ServerThread implements Runnable {
         statement.setInt(1, campaign_id);
         int rowsAffected = statement.executeUpdate();
         if (rowsAffected > 0) {
-            System.out.println("Campaign stopped successfully.");
+            sendMessage("Campaign stopped successfully.");
         } else {
-            System.out.println("Failed to stop campaign.");
+            sendMessage("Failed to stop campaign.");
         }
         con.close();
-        //? nz dali da e taka pak
     }
 
     public void manageSale() throws SQLException {
@@ -629,6 +634,45 @@ public class ServerThread implements Runnable {
         }
     }
 
+    public void createCampaign() throws SQLException {
+        connection = DatabaseManager.getConnection();
+        String sql = "insert into salesCampain(campainStart,campainEnd,isActive) values(?,?,0)";
+        PreparedStatement statement = connection.prepareStatement(sql);
+
+
+        String first = getMessage();
+        String second = getMessage();
+        LocalDate firstDate, secondDate;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        try {
+            firstDate = LocalDate.parse(first, formatter);
+            secondDate = LocalDate.parse(second, formatter);
+        } catch (DateTimeParseException e) {
+            sendMessage("Wrong date format");
+            adminMenu();
+            return;
+        }
+        sendMessage("correct");
+        if (secondDate.isBefore(firstDate)) {
+            LocalDate temp = firstDate;
+            firstDate = secondDate;
+            secondDate = temp;
+        }
+        first = firstDate.toString();
+        second = secondDate.toString();
+
+
+        statement.setString(1, first);
+        statement.setString(2, second);
+        int rowsAffected = statement.executeUpdate();
+        if (rowsAffected > 0) {
+            sendMessage("Campaign created successfully.");
+        } else {
+            sendMessage("Failed to create campaign.");
+        }
+
+    }
+
     public double checkDiscount(int product_id, int discount, Connection connection1) throws SQLException {
         String sql = "select price,minimalPrice from products where product_id=?";
         PreparedStatement statement = connection1.prepareStatement(sql);
@@ -656,15 +700,20 @@ public class ServerThread implements Runnable {
         double discount_price ; // Initialize discount_price outside the loop
 
         while (true) {
-            discount_price = checkDiscount(product_id, discount_percentage, connection);
 
-            if (discount_price == 0) {
+            discount_price = checkDiscount(product_id, discount_percentage, connection);
+            System.out.println(discount_price);
+
+            if (discount_price == 0.0) {
+                System.out.println("discount");
                 sendMessage("Discount percentage is too high. Please enter a valid discount percentage:");
                 discount_percentage = Integer.parseInt(getMessage());
             } else if (discount_price == -1) {
+                System.out.println("product id");
                 sendMessage("Wrong product ID. Please enter a valid product ID:");
                 product_id = Integer.parseInt(getMessage());
-            } else if (checkCampain(campaign_id, connection)) {
+            } else if (!checkCampain(campaign_id, connection)) {
+                System.out.println("wrong campaign id");
                 sendMessage("Wrong campaign ID. Please enter a valid campaign ID:");
                 campaign_id = Integer.parseInt(getMessage());
             } else {
@@ -674,7 +723,7 @@ public class ServerThread implements Runnable {
         }
 
 
-        String sql = "insert into sales (campain_id,product_id,discount_percentage,new_price) values (?,?,?,?)";
+        String sql = "insert into sales (campain_id,product_id,discount,new_price) values (?,?,?,?)";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setInt(1, campaign_id);
         statement.setInt(2, product_id);
@@ -682,9 +731,9 @@ public class ServerThread implements Runnable {
         statement.setDouble(4, discount_price);
         int rowsAffected = statement.executeUpdate();
         if (rowsAffected > 0) {
-            System.out.println("Product added to campaign successfully.");
+            sendMessage("Product added to campaign successfully.");
         } else {
-            System.out.println("Failed to add product to campaign.");
+            sendMessage("Failed to add product to campaign.");
         }
 
         connection.close();
