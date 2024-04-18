@@ -31,8 +31,8 @@ public class Client {
         writer.println(message);
     }
 
-    public static void getMessage() {
-        System.out.println(reader.nextLine());
+    public static String getMessage() {
+        return reader.nextLine();
     }
 
     public static void runLogic() throws NoSuchAlgorithmException {
@@ -45,33 +45,17 @@ public class Client {
         System.out.println("Enter your choice");
         String message = scanner.nextLine();
         sendMessage(message);
-        if (message.equals("1")) {
-            login();
-        } else if (message.equals("2")) {
-            register();
-        } else if (message.equals("3")) {
-            exit(0);
-        } else if (message.equals("4")) {
-            adminmenu();//remove later
-        } else if (message.equals("5")) {
-            usermenu();//remove later
+        switch (message) {
+            case "1" -> login();
+            case "2" -> register();
+            case "3" -> exit(0);
+            case "4" -> adminmenu();//remove later
+            case "5" -> usermenu();//remove later
         }
     }
 
     public static void login() throws NoSuchAlgorithmException {
-//        System.out.println("Enter username");
-//        String username = scanner.nextLine();
-//        if (username.isEmpty()) exit(1);
-//        System.out.println("Enter password");
-//        String password = scanner.nextLine();
-//        password = PasswordHasher.hashPassword(password);
-//        sendMessage(username);
-//        sendMessage(password);
-//        if (reader.nextLine().equals("wrong username or password")) {
-//            System.out.println("Wrong username or password");
-//            login();
-//            exit(1);
-//        }
+
         while (true) {
             System.out.println("Enter username");
             String username = scanner.nextLine();
@@ -81,7 +65,7 @@ public class Client {
             password = PasswordHasher.hashPassword(password);
             sendMessage(username);
             sendMessage(password);
-            String line = reader.nextLine();
+            String line = getMessage();
             if (line.equals("Login Successful")) {
                 System.out.println(line);
                 break;
@@ -111,7 +95,7 @@ public class Client {
         password = PasswordHasher.hashPassword(password);
         String message = username + ":" + password;
         sendMessage(message);
-        String line = reader.nextLine();
+        String line = getMessage();
         if (line.equals("User registered successfully.")) {
             System.out.println(line);
             login();
@@ -178,7 +162,7 @@ public class Client {
         message = cardNumber;
         sendMessage(message);
 
-        String response = reader.nextLine();
+        String response = getMessage();
         switch (response) {
             case "invalid card number":
                 System.out.println("Invalid card number");
@@ -255,7 +239,7 @@ public class Client {
         String endDate = scanner.nextLine();
         sendMessage(startDate);
         sendMessage(endDate);
-        String test = reader.nextLine();
+        String test = getMessage();
         if (!test.equals("correct")) {
             System.out.println(test);
             adminmenu();
@@ -324,7 +308,7 @@ public class Client {
         int id = scanner.nextInt();
         scanner.nextLine();
         sendMessage(String.valueOf(id));
-        String line = reader.nextLine();
+        String line = getMessage();
         System.out.println(line);
     }
 
@@ -333,7 +317,7 @@ public class Client {
         int id = scanner.nextInt();
         scanner.nextLine();
         sendMessage(String.valueOf(id));
-        String line = reader.nextLine();
+        String line = getMessage();
         System.out.println(line);
     }
 
@@ -346,13 +330,13 @@ public class Client {
         sendMessage(startDate);
         sendMessage(endDate);
 
-        String line = reader.nextLine();
+        String line = getMessage();
         if (!line.equals("correct")) {
             System.out.println(line);
             adminmenu();
             return;
         }
-        line = reader.nextLine();
+        line = getMessage();
         System.out.println(line);
     }
 
@@ -400,7 +384,7 @@ public class Client {
         sendMessage(String.valueOf(discountPercentage));
 
         while (true) {
-            String response = reader.nextLine();
+            String response = getMessage();
             if (response.equals("success")) break;
             else if (response.equals("Wrong product ID. Please enter a valid product ID:")) {
                 System.out.println(response);
@@ -416,7 +400,7 @@ public class Client {
                 sendMessage(String.valueOf(discountPercentage));
             }
         }
-        String line = reader.nextLine();
+        String line = getMessage();
         System.out.println(line);
 
         adminmenu();
@@ -432,7 +416,7 @@ public class Client {
         int productId = scanner.nextInt();
         sendMessage(String.valueOf(productId));
         while (true) {
-            String response = reader.nextLine();
+            String response = getMessage();
             if (response.equals("success")) break;
             else if (response.equals("Wrong product ID. Please enter a valid product ID.")) {
                 System.out.println(response);
@@ -444,7 +428,7 @@ public class Client {
                 sendMessage(String.valueOf(id));
             }
         }
-        String line = reader.nextLine();
+        String line = getMessage();
         System.out.println(line);
 
         adminmenu();
@@ -461,7 +445,7 @@ public class Client {
         int discountPercentage = scanner.nextInt();
         sendMessage(String.valueOf(discountPercentage));
         while (true) {
-            String response = reader.nextLine();
+            String response = getMessage();
             if (response.equals("success")) break;
             else if (response.equals("Wrong product ID. Please enter a valid product ID:")) {
                 System.out.println(response);
@@ -477,7 +461,7 @@ public class Client {
                 sendMessage(String.valueOf(discountPercentage));
             }
         }
-        String line = reader.nextLine();
+        String line = getMessage();
         System.out.println(line);
         adminmenu();
     }
@@ -492,7 +476,7 @@ public class Client {
         String startDate = scanner.nextLine();
         sendMessage(startDate);
         while (true) {
-            String response = reader.nextLine();
+            String response = getMessage();
             if (response.equals("success")) break;
             else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID.")) {
                 System.out.println(response);
@@ -500,7 +484,7 @@ public class Client {
                 sendMessage(String.valueOf(id));
             }
         }
-        String line = reader.nextLine();
+        String line = getMessage();
         System.out.println(line);
         adminmenu();
     }
@@ -514,7 +498,7 @@ public class Client {
         String endDate = scanner.nextLine();
         sendMessage(endDate);
         while (true) {
-            String response = reader.nextLine();
+            String response = getMessage();
             if (response.equals("success")) break;
             else if (response.equals("Wrong campaign ID. Please enter a valid campaign ID.")) {
                 System.out.println(response);
@@ -522,7 +506,7 @@ public class Client {
                 sendMessage(String.valueOf(id));
             }
         }
-        String line = reader.nextLine();
+        String line = getMessage();
         System.out.println(line);
         adminmenu();
     }
@@ -545,7 +529,7 @@ public class Client {
         double minPrice = scanner.nextDouble();
         scanner.nextLine();
         sendMessage(String.valueOf(minPrice));
-        String line = reader.nextLine();
+        String line = getMessage();
         System.out.println(line);
     }
 
@@ -570,7 +554,7 @@ public class Client {
         double minPrice = scanner.nextDouble();
         scanner.nextLine();
         sendMessage(String.valueOf(minPrice));
-        String line = reader.nextLine();
+        String line = getMessage();
         System.out.println(line);
     }
 
@@ -579,7 +563,7 @@ public class Client {
         System.out.println("Enter product id");
         int id = scanner.nextInt();
         sendMessage(String.valueOf(id));
-        String line = reader.nextLine();
+        String line = getMessage();
         System.out.println(line);
 
     }
@@ -604,9 +588,7 @@ public class Client {
         int id = scanner.nextInt();
         scanner.nextLine();
         sendMessage(String.valueOf(id));
-//        System.out.println("Enter your username");
-//        String username = scanner.nextLine();
-//        sendMessage(username);
+
         System.out.println("Enter your password");
         String password = scanner.nextLine();
         try {
@@ -617,7 +599,7 @@ public class Client {
 
         sendMessage(password);
 
-        String response = reader.nextLine();
+        String response = getMessage();
         System.out.println(response);
 
 
@@ -630,9 +612,7 @@ public class Client {
         int id = scanner.nextInt();
         scanner.nextLine();
         sendMessage(String.valueOf(id));
-//        System.out.println("Enter your username");
-//        String username = scanner.nextLine();
-//        sendMessage(username);
+
         System.out.println("Enter your password");
         String password = scanner.nextLine();
         try {
@@ -643,7 +623,7 @@ public class Client {
 
         sendMessage(password);
 
-        String response = reader.nextLine();
+        String response = getMessage();
         System.out.println(response);
 
 
@@ -651,5 +631,7 @@ public class Client {
 
     }
 
+
+    
 
 }

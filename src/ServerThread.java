@@ -9,7 +9,7 @@ import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class ServerThread implements Runnable {
-    // private ArrayList<User> users;
+
     private final Socket socket;
     private Scanner reader;
     private PrintStream writer;
@@ -116,7 +116,6 @@ public class ServerThread implements Runnable {
             writer.println(message);
         } catch (NoSuchElementException e) {
             System.out.println("Connection closed?");
-            return;
         }
     }
 
@@ -132,12 +131,12 @@ public class ServerThread implements Runnable {
     public void loginL() throws SQLException {
         int maxAttempts = 3, attempts = 0;
         String sql = "select user_id,role from user where username=? and passwordH=?";
-        String role = null;
-        int id = 0;
-        String username = null;
+        String role;
+        int id;
+        String username;
         String password;
 
-        while (attempts < maxAttempts) {
+        while (true) {
             username = getMessage();
             if (username.isEmpty()) return;
 
@@ -217,17 +216,10 @@ public class ServerThread implements Runnable {
         loginL();
     }
 
-    public void customerMenu(/*Customer customer*/) throws SQLException {
+    public void customerMenu() throws SQLException {
         int choice;
 
         do {
-//            System.out.println("Меню за клиенти:");
-//            System.out.println("1. Разгледай всички налични продукти");
-//            System.out.println("2. Разгледай продукти от кампании с промоции и разпродажби");
-//            System.out.println("3. Поръчай продукт");
-//            System.out.println("0. Изход");
-//            System.out.print("Изберете опция: ");
-
             choice = Integer.parseInt(getMessage());
 
             switch (choice) {
@@ -275,9 +267,6 @@ public class ServerThread implements Runnable {
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(sql);
         while (resultSet.next()) {
-            //sendMessage(resultSet.getString("product_name" + " " + String.valueOf(resultSet.getDouble("sale_price")) + " " + String.valueOf(resultSet.getInt("quantity"))));
-//            System.out.println(resultSet.getDouble("sale_price"));
-//            System.out.println(resultSet.getInt("quantity"));
             String productName = resultSet.getString("product_name");
             double salePrice = resultSet.getDouble("sale_price");
             int quantity = resultSet.getInt("quantity");
@@ -439,12 +428,9 @@ public class ServerThread implements Runnable {
     }
 
     public void spravka() throws SQLException {
-        //first=ot koga, last=do koga sig trq ima nqkva proverka tuka
-        //System.out.println("test");
         String first = getMessage();
-        // System.out.println(first);
         String second = getMessage();
-        // System.out.println(second);
+
         LocalDate firstDate, secondDate;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         try {
@@ -471,8 +457,6 @@ public class ServerThread implements Runnable {
         PreparedStatement statement = newconnection.prepareStatement(sql);
         statement.setString(1, first);
         statement.setString(2, second);
-//        statement.setDate(1, Date.valueOf(firstDate));
-//        statement.setDate(2, Date.valueOf(secondDate));
 
         ResultSet resultSet = statement.executeQuery();
         if (resultSet.next()) {
@@ -519,7 +503,7 @@ public class ServerThread implements Runnable {
         statement.setDouble(2, price);
         statement.setInt(3, quantity);
         statement.setDouble(4, minPrice);
-        //statement.setInt(5, 1);
+
         int rowsAffected = statement.executeUpdate();
         if (rowsAffected > 0) {
             sendMessage("Product added successfully.");
@@ -567,7 +551,7 @@ public class ServerThread implements Runnable {
         String sql = "select product_id,quantity from products where quantity < ?";
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setInt(1, numberOfProducts);
-        // Statement statement = connection.createStatement();
+
         ResultSet resultSet = statement.executeQuery();
         while (resultSet.next()) {
             writer.println(resultSet.getString("product_id") + " " + resultSet.getInt("quantity"));
@@ -727,7 +711,7 @@ public class ServerThread implements Runnable {
         int discount_percentage = Integer.parseInt(getMessage());
         connection = DatabaseManager.getConnection();
 
-        double discount_price; // Initialize discount_price outside the loop
+        double discount_price;
 
         while (true) {
 
@@ -809,17 +793,6 @@ public class ServerThread implements Runnable {
         int product_id = Integer.parseInt(getMessage());
         int discount_percentage = Integer.parseInt(getMessage());
 
-//        double discount_price=checkDiscount(product_id,discount_percentage,connection);
-//        if (discount_price==0) {
-//            System.out.println("discount too high");
-//            connection.close();
-//            return;
-//        }
-//        if(discount_price==-1){
-//            System.out.println("wrong product id");
-//            connection.close();
-//            return;
-//        }
         double discount_price;
         while (true) {
             discount_price = checkDiscount(product_id, discount_percentage, connection);
