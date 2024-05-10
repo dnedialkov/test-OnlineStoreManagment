@@ -68,10 +68,10 @@ select username,passwordH,role from user where username="ivan" and passwordH="iv
 
 INSERT INTO products (product_id, name, price, quantity, minimalPrice)
 VALUES
-(1, 'Laptop', 1200.00, 10, 1000.00),
-(2, 'Smartphone', 800.00, 20, 700.00),
-(3, 'Headphones', 100.00, 50, 80.00),
-(4, 'Tablet', 500.00, 15, 400.00);
+(1, 'tshirt', 120.00, 10, 100.00),
+(2, 'cargopants', 80.00, 20, 70.00),
+(3, 'cap', 10.00, 50, 8.00),
+(4, 'shirt', 50.00, 15, 40.00);
 
 INSERT INTO purchases (purchase_id, product_id, user_id, quantity, purchaseDate)
 VALUES
