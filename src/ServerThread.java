@@ -119,12 +119,7 @@ public class ServerThread implements Runnable {
     }
 
     public String getMessage() {
-//        try {
         return reader.nextLine();
-//        }catch (NoSuchElementException e){
-//            System.out.println("Connection closed?");
-//            return null;
-//        }
     }
 
     public void loginL() throws SQLException {
@@ -195,8 +190,8 @@ public class ServerThread implements Runnable {
         } catch (SQLIntegrityConstraintViolationException e) {
             sendMessage("Username is already taken. Please choose another username.");
         } catch (SQLException e) {
-            // Handle other SQL exceptions
-            e.printStackTrace(); // You can log the exception for debugging purposes
+
+            e.printStackTrace();
         } finally {
             try {
                 if (connection != null) {
@@ -280,7 +275,7 @@ public class ServerThread implements Runnable {
         int product_id = Integer.parseInt(getMessage());
         int quantity = Integer.parseInt(getMessage());
         String cardNumber = getMessage();
-        if (!CardValidator.validateCardNumber(cardNumber)) { //tuka s while sig trq
+        if (!CardValidator.validateCardNumber(cardNumber)) {
             System.out.println("invalid card number");
             connection.close();
             return;
@@ -448,7 +443,6 @@ public class ServerThread implements Runnable {
 
 
         Connection newconnection = DatabaseManager.getConnection();
-        //String sql="SELECT SUM(p.price * pur.quantity) AS total_sales FROM purchases pur JOIN products p ON pur.product_id = p.product_id WHERE pur.purchaseDate >= ? AND pur.purchaseDate < ?";
         String sql = "SELECT SUM(pur.purchase_price*pur.quantity) as total_sales from purchases pur where pur.purchaseDate >= ? AND pur.purchaseDate < ?";
         PreparedStatement statement = newconnection.prepareStatement(sql);
         statement.setString(1, firstDate.toString());
@@ -637,7 +631,6 @@ public class ServerThread implements Runnable {
                 adjustEndDate();
                 break;
             case 6:
-                // Exit manageSale() method
                 break;
             default:
                 sendMessage("Invalid choice");

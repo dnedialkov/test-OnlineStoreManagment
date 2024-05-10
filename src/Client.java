@@ -44,8 +44,7 @@ public class Client {
 //        System.out.println("5. user test");//remove later
 
 
-//        System.out.println("Enter your choice");
-//        String message = scanner.nextLine();
+
         String message;
         while (true) {
             System.out.println("Enter your choice");
@@ -131,10 +130,7 @@ public class Client {
         System.out.println("2. Разгледай продукти от кампании с промоции и разпродажби");
         System.out.println("3. Поръчай продукт");
         System.out.println("0. Изход");
-//        System.out.print("Изберете опция: ");
-//        int choice = Integer.parseInt(scanner.nextLine());
-//        sendMessage(String.valueOf(choice));
-        //scanner.nextLine();
+
         String choice;
         while (true) {
             System.out.println("Enter your choice");
@@ -226,17 +222,17 @@ public class Client {
         System.out.println("6. Remove admin");
         System.out.println("7. Exit");
 
-        String choice;
-        while (true) {
-            System.out.println("Enter your choice");
-            choice = scanner.next();
-
-            if (choice.matches("[1-7]")) {
-                break;
-            } else {
-                System.out.println("Invalid choice. Please enter a number between 1 and 7.");
-            }
-        }
+        String choice = scanner.nextLine();
+//        while (true) {
+//            System.out.println("Enter your choice");
+//            choice = scanner.next();
+//
+//            if (choice.matches("[1-7]")) {
+//                break;
+//            } else {
+//                System.out.println("Invalid choice. Please enter a number between 1 and 7.");
+//            }
+//        }
         sendMessage(choice);
 
         switch (choice) {
@@ -285,7 +281,7 @@ public class Client {
         } else {
             System.out.println("Total sales: " + line);
         }
-        //scanner.next();
+
         adminmenu();
     }
 
