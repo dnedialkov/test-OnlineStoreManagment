@@ -40,17 +40,30 @@ public class Client {
         System.out.println("1. login");
         System.out.println("2. register");
         System.out.println("3. exit");
-        System.out.println("4. admin test");//remove later
-        System.out.println("5. user test");//remove later
-        System.out.println("Enter your choice");
-        String message = scanner.nextLine();
+//        System.out.println("4. admin test");//remove later
+//        System.out.println("5. user test");//remove later
+
+
+//        System.out.println("Enter your choice");
+//        String message = scanner.nextLine();
+        String message;
+        while (true) {
+            System.out.println("Enter your choice");
+            message = scanner.nextLine();
+
+            if (message.matches("[1-3]")) {
+                break;
+            } else {
+                System.out.println("Invalid choice. Please enter a number between 1 and 3.");
+            }
+        }
         sendMessage(message);
         switch (message) {
             case "1" -> login();
             case "2" -> register();
             case "3" -> exit(0);
-            case "4" -> adminmenu();//remove later
-            case "5" -> usermenu();//remove later
+//            case "4" -> adminmenu();//remove later
+//            case "5" -> usermenu();//remove later
         }
     }
 
@@ -67,9 +80,11 @@ public class Client {
             sendMessage(password);
             String line = getMessage();
             if (line.equals("Login Successful")) {
+                System.out.println();
                 System.out.println(line);
                 break;
             }else if (line.equals("Max attempts reached. You are disconnected.")) {
+                System.out.println();
                 System.out.println(line);
                 exit(1);
             }else {
@@ -94,6 +109,7 @@ public class Client {
         String password = scanner.nextLine();
         password = PasswordHasher.hashPassword(password);
         String message = username + ":" + password;
+        if (username.isEmpty()) exit(1);
         sendMessage(message);
         String line = getMessage();
         if (line.equals("User registered successfully.")) {
@@ -101,30 +117,44 @@ public class Client {
             login();
         } else if (line.equals("Username is already taken. Please choose another username.")) {
             System.out.println(line);
-            //register();
+            register();
         } else {
             System.out.println("Something went wrong. Please try again");
-            // register();
+            register();
         }
     }
 
     public static void usermenu() {
+        System.out.println();
         System.out.println("Меню за клиенти:");
         System.out.println("1. Разгледай всички налични продукти");
         System.out.println("2. Разгледай продукти от кампании с промоции и разпродажби");
         System.out.println("3. Поръчай продукт");
         System.out.println("0. Изход");
-        System.out.print("Изберете опция: ");
-        int choice = Integer.parseInt(scanner.nextLine());
-        sendMessage(String.valueOf(choice));
+//        System.out.print("Изберете опция: ");
+//        int choice = Integer.parseInt(scanner.nextLine());
+//        sendMessage(String.valueOf(choice));
         //scanner.nextLine();
-        if (choice == 1) {
+        String choice;
+        while (true) {
+            System.out.println("Enter your choice");
+            choice = scanner.next();
+
+            if (choice.matches("[0-3]")) {
+                break;
+            } else {
+                System.out.println("Invalid choice. Please enter a number between 0 and 3.");
+            }
+        }
+        sendMessage(choice);
+        int choicet=Integer.parseInt(choice);
+        if (choicet == 1) {
             browseAllProducts();
-        } else if (choice == 2) {
+        } else if (choicet == 2) {
             browsePromotionalProducts();
-        } else if (choice == 3) {
+        } else if (choicet == 3) {
             orderProduct();
-        } else if (choice == 0) {
+        } else if (choicet == 0) {
             exit(0);
         }
     }
@@ -133,22 +163,27 @@ public class Client {
         String line;
         while ((line = reader.nextLine()) != null) {
             if (line.equals("done")) break;
-            System.out.println("Message from server: " + line);
+            String parts[] = line.split(" ");
+            System.out.println("Продукт: " + parts[0] + " Цена: " + parts[1] + "лв. Количество: " + parts[2]);
         }
         usermenu();
 
     }
 
     public static void browsePromotionalProducts() {
+        System.out.println();
         String line;
         while ((line = reader.nextLine()) != null) {
             if (line.equals("done")) break;
-            System.out.println("Message from server: " + line);
+            String parts[] = line.split(" ");
+            System.out.println("Продукт: " + parts[0] + " Цена: " + parts[1] + "лв. Количество: " + parts[2]);
         }
+        System.out.println();
         usermenu();
     }
 
     public static void orderProduct() {
+        scanner.nextLine();
         System.out.println("Enter product id");
         int id = Integer.parseInt(scanner.nextLine());
         String message = String.valueOf(id);
@@ -181,50 +216,49 @@ public class Client {
     }
 
     public static void adminmenu() {
+        System.out.println();
         System.out.println("Admin menu");
-        System.out.println("1. Spravka");
+        System.out.println("1. Report");
         System.out.println("2. Redact menu");
         System.out.println("3. Sales Menu");
         System.out.println("4. quantityCheck");
         System.out.println("5. Make admin");
         System.out.println("6. Remove admin");
         System.out.println("7. Exit");
-        System.out.println("Enter your choice");
 
-        int choice ;//= Integer.parseInt(scanner.nextLine());
-        //sendMessage(String.valueOf(choice));
-
+        String choice;
         while (true) {
-            //System.out.println("Enter your choice (1-7):");
-            try {
-                choice = Integer.parseInt(scanner.nextLine());
-                break; // Exit the loop if input is valid
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a number.");
+            System.out.println("Enter your choice");
+            choice = scanner.next();
+
+            if (choice.matches("[1-7]")) {
+                break;
+            } else {
+                System.out.println("Invalid choice. Please enter a number between 1 and 7.");
             }
         }
-        sendMessage(String.valueOf(choice));
+        sendMessage(choice);
 
         switch (choice) {
-            case 1:
+            case "1":
                 spravka();
                 break;
-            case 2:
+            case "2":
                 redactMenu();
                 break;
-            case 3:
+            case "3":
                 salesMenu();
                 break;
-            case 4:
+            case "4":
                 quantityCheck();
                 break;
-            case 5:
+            case "5":
                 addAdmin();
                 break;
-            case 6:
+            case "6":
                 removeAdmin();
                 break;
-            case 7:
+            case "7":
                 exit(0);
                 break;
             default:
@@ -251,6 +285,7 @@ public class Client {
         } else {
             System.out.println("Total sales: " + line);
         }
+        //scanner.next();
         adminmenu();
     }
 
@@ -301,6 +336,7 @@ public class Client {
                 System.out.println("Невалиден избор. Моля, опитайте отново.");
                 break;
         }
+        adminmenu();
     }
 
     public static void startSale() {
@@ -577,8 +613,9 @@ public class Client {
         String line;
         while ((line = reader.nextLine()) != null) {
             if (line.equals("done")) break;
-            System.out.println("Message from server: " + line);
+            System.out.println("Product id: " + line +" Quantity left");
         }
+
         adminmenu();
     }
 

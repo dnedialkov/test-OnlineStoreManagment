@@ -18,13 +18,12 @@ public class ServerThread implements Runnable {
     private Admin admin;
 
 
-    private Connection connection; //Conection pool?
-    //private BasicDataSource dataSource;
+    private Connection connection;
+
 
     public ServerThread(Socket socket, Connection connection/*,BasicDataSource dataSource*/) {
         this.socket = socket;
         this.connection = connection;
-        //this.dataSource=dataSource;
     }
 
     public static void logAdm(int adminId, int userId, String action, Connection connection) {
@@ -77,15 +76,15 @@ public class ServerThread implements Runnable {
                     break;
                 case 3:
                     break;
-                case 4://remove later
-                    admin = new Admin(1, "admin");
-                    adminMenu();
-                    break;
-                case 5://remove later
-                    customer = new Customer(2, "user");
-                    customerMenu();
+//                case 4://remove later
+//                    admin = new Admin(1, "admin");
+//                    adminMenu();
+//                    break;
+//                case 5://remove later
+//                    customer = new Customer(2, "user");
+//                    customerMenu();
             }
-            //loginL();
+
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -163,7 +162,6 @@ public class ServerThread implements Runnable {
 
         connection.close();
 
-        //sendMessage("Login Successful");
         if (role.equals("user")) {
             sendMessage("1");
             customer = new Customer(id, username);
@@ -195,7 +193,6 @@ public class ServerThread implements Runnable {
                 System.out.println("Failed to register user.");
             }
         } catch (SQLIntegrityConstraintViolationException e) {
-            // Handle the case where the username is already taken
             sendMessage("Username is already taken. Please choose another username.");
         } catch (SQLException e) {
             // Handle other SQL exceptions
@@ -382,7 +379,7 @@ public class ServerThread implements Runnable {
             adminMenu();
             return;
         }
-        int adminId = resultSet.getInt("user_id");
+        int adminId = admin.getId();
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setInt(1, id);
         int rowsAffected = statement.executeUpdate();
@@ -413,7 +410,7 @@ public class ServerThread implements Runnable {
             adminMenu();
             return;
         }
-        int adminId = resultSet.getInt("user_id");
+        int adminId = admin.getId();
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setInt(1, id);
         int rowsAffected = statement.executeUpdate();
@@ -442,21 +439,20 @@ public class ServerThread implements Runnable {
             return;
         }
         sendMessage("correct");
+
         if (secondDate.isBefore(firstDate)) {
             LocalDate temp = firstDate;
             firstDate = secondDate;
             secondDate = temp;
         }
-        first = firstDate.toString();
-        second = secondDate.toString();
 
 
         Connection newconnection = DatabaseManager.getConnection();
         //String sql="SELECT SUM(p.price * pur.quantity) AS total_sales FROM purchases pur JOIN products p ON pur.product_id = p.product_id WHERE pur.purchaseDate >= ? AND pur.purchaseDate < ?";
         String sql = "SELECT SUM(pur.purchase_price*pur.quantity) as total_sales from purchases pur where pur.purchaseDate >= ? AND pur.purchaseDate < ?";
         PreparedStatement statement = newconnection.prepareStatement(sql);
-        statement.setString(1, first);
-        statement.setString(2, second);
+        statement.setString(1, firstDate.toString());
+        statement.setString(2, secondDate.toString());
 
         ResultSet resultSet = statement.executeQuery();
         if (resultSet.next()) {
@@ -580,6 +576,7 @@ public class ServerThread implements Runnable {
             case 5:
                 break;
         }
+        adminMenu();
     }
 
     public void startSale() throws SQLException {
